@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oasis - Leitura Diária</title>
+    <!-- Tailwind CSS para Estilização -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React e Babel para execução no navegador -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Bibliotecas de Exportação -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        
+        .pdf-brand-text {
+            color: #064e3b !important; 
+            -webkit-text-fill-color: #064e3b !important;
+        }
+
+        /* Ajuste para o logotipo da imagem */
+        .logo-img {
+            object-fit: contain;
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+        }
+    </style>
+</head>
+<body class="bg-slate-100">
+    <div id="root"></div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useRef } = React;
+        
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'fazenda-oasis-v2';
+
+        // URL da imagem do logotipo fornecida pelo usuário
+        const OASIS_LOGO_URL = "https://i.imgur.com/fx8tSao.png";
+
+        // Componente de Logótipo Oasis utilizando a imagem do Imgur
+        const OasisLogo = ({ size = "md", isPdf = false }) => {
+            const containerClass = "flex items-center gap-3";
+            const iconSize = size === "lg" ? "h-24" : "h-14";
+            
+            return (
+                <div className={containerClass}>
+                    <img 
+                        src={OASIS_LOGO_URL} 
+                        alt="Oasis Logo" 
+                        className={`${iconSize} logo-img block`}
+                        crossOrigin="anonymous"
+                    />
+                </div>
+            );
+        };
+
+        const SvgIcon = ({ name, className = "w-4 h-4" }) => {
+            const icons = {
+                trash: <><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></>,
+                edit: <><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></>,
+                fileText: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></>,
+                clock: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>
+            };
+            return (
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                    {icons[name] || <circle cx="12" cy="12" r="10" />}
+                </svg>
+            );
+        };
+
+        function App() {
+            const [user, setUser] = useState(null);
+            const [registros, setRegistros] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [isExporting, setIsExporting] = useState(false);
+            const [isSaving, setIsSaving] = useState(false);
+            const [editingId, setEditingId] = useState(null);
+            const reportRef = useRef(null);
+            
+            const [formData, setFormData] = useState({ bloco: '', segundos: '' });
+
+            useEffect(() => {
+                const initAuth = async () => {
+                    try {
+                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                            await auth.signInWithCustomToken(__initial_auth_token);
+                        } else {
+                            await auth.signInAnonymously();
+                        }
+                    } catch (e) { console.error("Erro na auth:", e); }
+                };
+                initAuth();
+                return auth.onAuthStateChanged(setUser);
+            }, []);
+
+            useEffect(() => {
+                if (!user) return;
+                setLoading(true);
+                const path = `artifacts/${appId}/public/data/vazoes`;
+                const unsubscribe = db.collection(path).onSnapshot((snap) => {
+                    const data = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+                    setRegistros(data.sort((a,b) => b.timestamp - a.timestamp));
+                    setLoading(false);
+                }, (err) => {
+                    console.error("Erro no Firestore:", err);
+                    setLoading(false);
+                });
+                return () => unsubscribe();
+            }, [user]);
+
+            const stats = useMemo(() => {
+                const total = registros.reduce((acc, curr) => acc + (Number(curr.vazaoCalculada) || 0), 0);
+                const media = registros.length > 0 ? total / registros.length : 0;
+                const ativosSet = new Set(registros.map(r => r.bloco.toUpperCase()));
+                return { total, media, count: registros.length, ativos: ativosSet.size };
+            }, [registros]);
+
+            const handleSaveLeitura = async (e) => {
+                e.preventDefault();
+                if (!user || isSaving) return;
+                const segs = parseFloat(formData.segundos);
+                const vazao = (15 / segs) * 3600;
+
+                setIsSaving(true);
+                try {
+                    const payload = {
+                        bloco: formData.bloco.toUpperCase(),
+                        segundos: segs,
+                        vazaoCalculada: vazao,
+                        dataRegistro: new Date().toLocaleDateString('pt-BR'),
+                        timestamp: Date.now()
+                    };
+                    const collectionRef = db.collection(`artifacts/${appId}/public/data/vazoes`);
+                    if (editingId) {
+                        await collectionRef.doc(editingId).update(payload);
+                        setEditingId(null);
+                    } else {
+                        await collectionRef.add(payload);
+                    }
+                    setFormData({ bloco: '', segundos: '' });
+                } catch (e) { console.error(e); } finally { setIsSaving(false); }
+            };
+
+            const exportFullReport = async () => {
+                if (!reportRef.current || isExporting) return;
+                setIsExporting(true);
+                try {
+                    const template = reportRef.current;
+                    template.style.height = "auto";
+                    template.style.opacity = "1";
+                    
+                    // Aguarda imagens carregarem antes de capturar
+                    await new Promise(r => setTimeout(r, 1000));
+                    
+                    const canvas = await html2canvas(template, { 
+                        scale: 2, 
+                        useCORS: true,
+                        allowTaint: true,
+                        backgroundColor: '#ffffff',
+                        logging: false,
+                        windowWidth: 800
+                    });
+
+                    template.style.height = "0";
+                    template.style.opacity = "0";
+
+                    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                    const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                    
+                    pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+                    pdf.save(`Oasis_Relatorio_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
+                } catch (err) { 
+                    console.error("Erro na exportação:", err); 
+                } finally { 
+                    setIsExporting(false); 
+                }
+            };
+
+            if (loading) return <div className="min-h-screen bg-emerald-950 flex items-center justify-center text-white font-black animate-pulse uppercase tracking-widest text-center px-4">A carregar sistema Oasis...</div>;
+
+            return (
+                <div className="min-h-screen pb-20">
+                    
+                    {/* TEMPLATE PDF (ESCONDIDO) */}
+                    <div style={{ height: 0, overflow: 'hidden', opacity: 0 }} ref={reportRef}>
+                        <div className="w-[800px] bg-white p-12 space-y-10">
+                            {/* CABEÇALHO DO PDF COM O NOVO LOGOTIPO */}
+                            <div className="flex justify-between items-center border-b-8 border-emerald-900 pb-8">
+                                <div>
+                                    <OasisLogo size="lg" isPdf={true} />
+                                    <p className="text-sm font-black text-emerald-600 uppercase tracking-[0.3em] mt-4 ml-1">Leitura Diária Vazão dos Poços</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Data de Emissão</p>
+                                    <p className="text-2xl font-black text-slate-800">{new Date().toLocaleDateString('pt-BR')}</p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-4">
+                                <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 text-center">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Vazão Total</p>
+                                    <p className="text-3xl font-[900] text-blue-600">{stats.total.toLocaleString('pt-BR')} <small className="text-xs">L/h</small></p>
+                                </div>
+                                <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 text-center">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Média Poços</p>
+                                    <p className="text-3xl font-[900] text-slate-800">{stats.media.toLocaleString('pt-BR', {maximumFractionDigits: 0})}</p>
+                                </div>
+                                <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 text-center">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Total Poços</p>
+                                    <p className="text-3xl font-[900] text-emerald-600">{stats.ativos}</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="flex bg-emerald-950 text-white p-4 rounded-xl text-[10px] font-black uppercase tracking-widest">
+                                    <span className="w-1/3">Poço</span>
+                                    <span className="w-1/3 text-center">Tempo (15L)</span>
+                                    <span className="w-1/3 text-right">Vazão (L/h)</span>
+                                </div>
+                                {registros.map(reg => (
+                                    <div key={reg.id} className="flex items-center p-6 border-b border-slate-100">
+                                        <div className="w-1/3">
+                                            <p className="text-3xl font-[900] text-slate-900 leading-none">{reg.bloco}</p>
+                                            <p className="text-[9px] font-bold text-slate-400 uppercase mt-1">{reg.dataRegistro}</p>
+                                        </div>
+                                        <div className="w-1/3 text-center text-xl font-bold text-slate-400">
+                                            {reg.segundos}s
+                                        </div>
+                                        <div className="w-1/3 text-right">
+                                            <p className="text-3xl font-[900] text-emerald-700 leading-none">
+                                                {reg.vazaoCalculada.toLocaleString('pt-BR', {maximumFractionDigits: 0})}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="pt-8 text-center">
+                                <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.5em]">Fazenda Oasis • Sistema de Monitorização</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* INTERFACE DO UTILIZADOR - LOGO IMAGEM */}
+                    <header className="bg-emerald-950 text-white p-6 sticky top-0 z-40 shadow-xl border-b border-white/5">
+                        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+                            <div className="text-center md:text-left">
+                                <OasisLogo size="md" />
+                                <p className="text-[10px] text-emerald-400 font-black uppercase tracking-[0.3em] mt-2">Leitura Diária Vazão dos Poços</p>
+                            </div>
+                            <div className="flex flex-wrap justify-center gap-4 md:gap-6 items-center bg-white/5 p-3 rounded-3xl border border-white/10">
+                                <div className="text-center px-4">
+                                    <p className="text-[8px] font-bold text-emerald-500 uppercase mb-1">Poços Ativos</p>
+                                    <p className="text-lg font-black">{stats.ativos}</p>
+                                </div>
+                                <div className="text-center px-4 border-l border-white/10">
+                                    <p className="text-[8px] font-bold text-emerald-500 uppercase mb-1">Média L/h</p>
+                                    <p className="text-lg font-black">{stats.media.toLocaleString('pt-BR', {maximumFractionDigits: 0})}</p>
+                                </div>
+                                <div className="text-center px-4 border-l border-white/10">
+                                    <p className="text-[8px] font-bold text-emerald-500 uppercase mb-1">Total Geral</p>
+                                    <p className="text-lg font-black text-blue-400">{stats.total.toLocaleString('pt-BR')}</p>
+                                </div>
+                                <button onClick={exportFullReport} disabled={isExporting} className="bg-blue-600 hover:bg-blue-500 transition-all px-4 py-3 rounded-2xl font-black text-[9px] uppercase flex items-center gap-2 shadow-lg disabled:opacity-50 min-w-[130px] justify-center">
+                                    {isExporting ? "A Gerar..." : <><SvgIcon name="fileText" /> Exportar PDF</>}
+                                </button>
+                            </div>
+                        </div>
+                    </header>
+
+                    <main className="max-w-7xl mx-auto px-4 mt-8 grid lg:grid-cols-2 gap-10">
+                        <section>
+                            <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-200 sticky top-44">
+                                <h2 className="text-[11px] font-black uppercase text-slate-400 mb-8 tracking-widest flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                    {editingId ? "Corrigir Registro" : "Registrar Vazão"}
+                                </h2>
+                                <form onSubmit={handleSaveLeitura} className="space-y-6">
+                                    <div>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase ml-2 block mb-2">Identificação do Poço</label>
+                                        <input 
+                                            type="text" required placeholder="EX: P01"
+                                            value={formData.bloco} onChange={e => setFormData({...formData, bloco: e.target.value.toUpperCase()})}
+                                            className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-3xl font-black text-lg focus:border-emerald-500 outline-none uppercase transition-all"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase ml-2 block mb-2">Segundos p/ 15 Litros</label>
+                                        <input 
+                                            type="number" step="0.01" required placeholder="0.00"
+                                            value={formData.segundos} onChange={e => setFormData({...formData, segundos: e.target.value})}
+                                            className="w-full p-6 bg-emerald-50 border-2 border-emerald-100 rounded-3xl font-black text-4xl text-emerald-700 outline-none focus:border-emerald-500 transition-all"
+                                        />
+                                    </div>
+                                    <div className="flex gap-2">
+                                        {editingId && (
+                                            <button type="button" onClick={() => {setEditingId(null); setFormData({bloco:'', segundos:''})}} className="flex-1 bg-slate-200 text-slate-500 font-black py-6 rounded-3xl uppercase tracking-widest">Cancelar</button>
+                                        )}
+                                        <button type="submit" className="flex-[2] bg-emerald-600 text-white font-black py-6 rounded-3xl shadow-xl uppercase tracking-widest hover:bg-emerald-700 transition-all">
+                                            {isSaving ? "A gravar..." : editingId ? "Atualizar" : "Salvar Leitura"}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </section>
+
+                        <section className="space-y-6">
+                            <div className="flex justify-between items-end px-2">
+                                <h2 className="text-xl font-black text-slate-800 uppercase tracking-tighter">Histórico do Dia</h2>
+                                <span className="text-[10px] font-black text-slate-400 bg-white border border-slate-200 px-3 py-1 rounded-full">{registros.length} Poços</span>
+                            </div>
+                            <div className="grid gap-4">
+                                {registros.length === 0 ? (
+                                    <div className="bg-white p-20 rounded-[3rem] border border-dashed border-slate-300 text-center">
+                                        <p className="text-slate-400 font-black uppercase text-xs tracking-widest">Aguardando leituras...</p>
+                                    </div>
+                                ) : registros.map(reg => (
+                                    <div key={reg.id} className="bg-white rounded-[2rem] p-6 border border-slate-200 shadow-sm relative group hover:border-emerald-200 transition-all">
+                                        <div className="absolute right-6 top-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button onClick={() => { setEditingId(reg.id); setFormData({bloco: reg.bloco, segundos: reg.segundos}); window.scrollTo({top: 0, behavior:'smooth'}) }} className="p-2 text-amber-500 hover:bg-amber-50 rounded-xl transition-all"><SvgIcon name="edit" /></button>
+                                            <button onClick={async () => { if(confirm("Eliminar este registo?")) await db.collection(`artifacts/${appId}/public/data/vazoes`).doc(reg.id).delete(); }} className="p-2 text-red-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"><SvgIcon name="trash" /></button>
+                                        </div>
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <h3 className="text-3xl font-[900] text-slate-800 uppercase tracking-tighter leading-none">{reg.bloco}</h3>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase mt-2">{reg.dataRegistro}</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <span className="text-emerald-600 font-[900] text-3xl leading-none tracking-tighter">
+                                                    {Number(reg.vazaoCalculada).toLocaleString('pt-BR', {maximumFractionDigits:0})} 
+                                                </span>
+                                                <span className="text-[10px] text-slate-400 block font-bold uppercase mt-1">L/hora</span>
+                                            </div>
+                                        </div>
+                                        <div className="mt-4 pt-4 border-t border-slate-50 flex justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                            <span className="flex items-center gap-1"><SvgIcon name="clock" className="w-3" /> {reg.segundos} Segundos</span>
+                                            <span>Base: 15L</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+                    </main>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
