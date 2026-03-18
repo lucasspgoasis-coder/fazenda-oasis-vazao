@@ -22,7 +22,6 @@
             -webkit-text-fill-color: #064e3b !important;
         }
 
-        /* Ajuste para o logotipo da imagem */
         .logo-img {
             object-fit: contain;
             filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
@@ -32,30 +31,39 @@
 <body class="bg-slate-100">
     <div id="root"></div>
 
-    <!-- Firebase SDKs -->
+    <!-- Firebase SDKs (Versão Compat) -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
-        
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const app = firebase.initializeApp(firebaseConfig);
+
+        // --- CORREÇÃO PARA GITHUB PAGES ---
+        // Verifica se as variáveis de ambiente do chat existem, caso contrário usa um objeto vazio para não quebrar
+        let firebaseConfig = {};
+        try {
+            firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+                apiKey: "SUA_API_KEY_AQUI",
+                authDomain: "SEU_PROJETO.firebaseapp.com",
+                projectId: "SEU_PROJETO_ID",
+                storageBucket: "SEU_PROJETO.appspot.com",
+                messagingSenderId: "ID_SENDER",
+                appId: "APP_ID"
+            };
+        } catch (e) { console.warn("Firebase Config não encontrada, use valores manuais."); }
+
+        const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'fazenda-oasis-v2';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'fazenda-oasis-producao';
 
-        // URL da imagem do logotipo fornecida pelo usuário
         const OASIS_LOGO_URL = "https://i.imgur.com/fx8tSao.png";
 
-        // Componente de Logótipo Oasis utilizando a imagem do Imgur
         const OasisLogo = ({ size = "md", isPdf = false }) => {
-            const containerClass = "flex items-center gap-3";
             const iconSize = size === "lg" ? "h-24" : "h-14";
-            
             return (
-                <div className={containerClass}>
+                <div className="flex items-center gap-3">
                     <img 
                         src={OASIS_LOGO_URL} 
                         alt="Oasis Logo" 
@@ -99,7 +107,11 @@
                         } else {
                             await auth.signInAnonymously();
                         }
-                    } catch (e) { console.error("Erro na auth:", e); }
+                    } catch (e) { 
+                        console.error("Erro na auth:", e); 
+                        // Se falhar no GitHub, tentamos anônimo direto
+                        try { await auth.signInAnonymously(); } catch(err) {}
+                    }
                 };
                 initAuth();
                 return auth.onAuthStateChanged(setUser);
@@ -161,7 +173,6 @@
                     template.style.height = "auto";
                     template.style.opacity = "1";
                     
-                    // Aguarda imagens carregarem antes de capturar
                     await new Promise(r => setTimeout(r, 1000));
                     
                     const canvas = await html2canvas(template, { 
@@ -169,7 +180,6 @@
                         useCORS: true,
                         allowTaint: true,
                         backgroundColor: '#ffffff',
-                        logging: false,
                         windowWidth: 800
                     });
 
@@ -177,7 +187,8 @@
                     template.style.opacity = "0";
 
                     const imgData = canvas.toDataURL('image/jpeg', 0.95);
-                    const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
+                    const { jsPDF } = window.jspdf;
+                    const pdf = new jsPDF('p', 'mm', 'a4');
                     const pdfWidth = pdf.internal.pageSize.getWidth();
                     const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
                     
@@ -190,7 +201,17 @@
                 }
             };
 
-            if (loading) return <div className="min-h-screen bg-emerald-950 flex items-center justify-center text-white font-black animate-pulse uppercase tracking-widest text-center px-4">A carregar sistema Oasis...</div>;
+            if (loading) return (
+                <div className="min-h-screen bg-emerald-950 flex flex-col items-center justify-center text-white px-4">
+                    <div className="animate-pulse flex flex-col items-center">
+                        <OasisLogo size="lg" />
+                        <p className="font-black uppercase tracking-widest mt-8">A carregar sistema Oasis...</p>
+                        {(!firebaseConfig.apiKey || firebaseConfig.apiKey === "SUA_API_KEY_AQUI") && (
+                            <p className="text-red-400 text-[10px] mt-4 max-w-xs text-center uppercase">Aviso: Você precisa configurar suas chaves do Firebase para funcionar no GitHub.</p>
+                        )}
+                    </div>
+                </div>
+            );
 
             return (
                 <div className="min-h-screen pb-20">
@@ -198,7 +219,6 @@
                     {/* TEMPLATE PDF (ESCONDIDO) */}
                     <div style={{ height: 0, overflow: 'hidden', opacity: 0 }} ref={reportRef}>
                         <div className="w-[800px] bg-white p-12 space-y-10">
-                            {/* CABEÇALHO DO PDF COM O NOVO LOGOTIPO */}
                             <div className="flex justify-between items-center border-b-8 border-emerald-900 pb-8">
                                 <div>
                                     <OasisLogo size="lg" isPdf={true} />
@@ -255,7 +275,7 @@
                         </div>
                     </div>
 
-                    {/* INTERFACE DO UTILIZADOR - LOGO IMAGEM */}
+                    {/* INTERFACE PRINCIPAL */}
                     <header className="bg-emerald-950 text-white p-6 sticky top-0 z-40 shadow-xl border-b border-white/5">
                         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
                             <div className="text-center md:text-left">
