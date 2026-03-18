@@ -18,28 +18,39 @@
         body { 
             font-family: 'Inter', sans-serif; 
             letter-spacing: -0.01em;
+            background-color: #F1F5F9;
+            margin: 0;
+            padding: 0;
         }
         .logo-img { object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1)); }
-        .glass-effect {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+        
+        /* Prevenção de corte no topo em dispositivos móveis */
+        .safe-top {
+            padding-top: env(safe-area-inset-top, 20px);
+        }
+
+        input:focus {
+            scroll-margin-top: 100px;
+        }
+
+        /* Estilo para garantir que o PDF seja gerado corretamente */
+        #pdf-template {
+            font-family: 'Inter', sans-serif;
         }
     </style>
 </head>
-<body class="bg-[#F8FAFC]">
+<body>
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
-        // URL do logotipo da Oasis
         const OASIS_LOGO_URL = "https://i.imgur.com/fx8tSao.png";
 
         const OasisLogo = ({ size = "md" }) => {
-            const iconSize = size === "lg" ? "h-28" : "h-16";
+            const iconSize = size === "lg" ? "h-20" : "h-10";
             return (
-                <div className="flex items-center gap-4">
+                <div className="flex items-center">
                     <img src={OASIS_LOGO_URL} alt="Oasis Logo" className={`${iconSize} logo-img block`} crossOrigin="anonymous" />
                 </div>
             );
@@ -50,7 +61,6 @@
                 trash: <><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></>,
                 edit: <><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></>,
                 fileText: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></>,
-                clock: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
                 plus: <><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></>
             };
             return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>{icons[name]}</svg>;
@@ -60,17 +70,14 @@
             const [registros, setRegistros] = useState([]);
             const [loading, setLoading] = useState(true);
             const [isExporting, setIsExporting] = useState(false);
-            const [isSaving, setIsSaving] = useState(false);
             const [editingId, setEditingId] = useState(null);
             const [formData, setFormData] = useState({ bloco: '', segundos: '' });
             const reportRef = useRef(null);
 
             useEffect(() => {
                 const localData = localStorage.getItem('oasis_vazao_data');
-                if (localData) {
-                    setRegistros(JSON.parse(localData));
-                }
-                setLoading(false);
+                if (localData) setRegistros(JSON.parse(localData));
+                setTimeout(() => setLoading(false), 1000);
             }, []);
 
             const saveToLocal = (data) => {
@@ -80,13 +87,13 @@
 
             const stats = useMemo(() => {
                 const total = registros.reduce((acc, curr) => acc + (Number(curr.vazaoCalculada) || 0), 0);
-                const media = registros.length > 0 ? total / registros.length : 0;
-                return { total, media, ativos: new Set(registros.map(r => r.bloco)).size };
+                const count = registros.length;
+                const media = count > 0 ? total / count : 0;
+                return { total, count, media };
             }, [registros]);
 
             const handleSave = (e) => {
                 e.preventDefault();
-                setIsSaving(true);
                 const segs = parseFloat(formData.segundos);
                 const vazao = (15 / segs) * 3600;
 
@@ -98,270 +105,248 @@
                     timestamp: Date.now()
                 };
 
-                let updatedRecords;
-                if (editingId) {
-                    updatedRecords = registros.map(r => r.id === editingId ? { ...payload, id: editingId } : r);
-                } else {
-                    updatedRecords = [{ ...payload, id: Date.now().toString() }, ...registros];
-                }
+                let updatedRecords = editingId 
+                    ? registros.map(r => r.id === editingId ? { ...payload, id: editingId } : r)
+                    : [{ ...payload, id: Date.now().toString() }, ...registros];
 
                 saveToLocal(updatedRecords);
                 setEditingId(null);
                 setFormData({ bloco: '', segundos: '' });
-                setIsSaving(false);
-            };
-
-            const handleDelete = (id) => {
-                if (confirm("Deseja realmente excluir este registro?")) {
-                    const updated = registros.filter(r => r.id !== id);
-                    saveToLocal(updated);
-                }
             };
 
             const exportPDF = async () => {
                 setIsExporting(true);
                 const template = reportRef.current;
                 template.style.display = "block";
-                template.style.opacity = "1";
-                
+                // Espera as imagens carregarem
                 await new Promise(r => setTimeout(r, 800));
                 
-                const canvas = await html2canvas(template, { 
-                    scale: 3, 
-                    useCORS: true, 
-                    allowTaint: true,
-                    backgroundColor: "#ffffff"
-                });
-                
-                template.style.display = "none";
-                
-                const imgData = canvas.toDataURL('image/jpeg', 1.0);
-                const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
-                const pdfWidth = 210;
-                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-                
-                pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-                pdf.save(`Fazenda_Oasis_Relatorio_Vazao.pdf`);
+                try {
+                    const canvas = await html2canvas(template, { 
+                        scale: 2, 
+                        useCORS: true,
+                        backgroundColor: "#ffffff"
+                    });
+                    template.style.display = "none";
+                    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                    const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
+                    const imgProps = pdf.getImageProperties(imgData);
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                    pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+                    pdf.save(`Relatorio_Vazao_Oasis_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
+                } catch (err) {
+                    console.error("Erro ao gerar PDF", err);
+                }
                 setIsExporting(false);
             };
 
             if (loading) return (
-                <div className="min-h-screen bg-[#062C1B] flex flex-col items-center justify-center text-white p-10">
+                <div className="min-h-screen bg-[#062C1B] flex flex-col items-center justify-center text-white">
                     <OasisLogo size="lg" />
-                    <div className="mt-8 font-black uppercase tracking-[0.3em] animate-pulse text-sm text-emerald-400">Carregando Sistema...</div>
+                    <p className="mt-4 font-bold tracking-widest animate-pulse uppercase text-[10px]">A Carregar Sistema...</p>
                 </div>
             );
 
             return (
-                <div className="min-h-screen">
+                <div className="min-h-screen safe-top">
                     
-                    {/* TEMPLATE PDF OCULTO (Ajustado para o novo layout) */}
-                    <div style={{ display: 'none' }} ref={reportRef}>
-                        <div className="w-[1000px] bg-white p-16 space-y-12">
-                            <div className="flex justify-between items-end border-b-4 border-emerald-900 pb-10">
-                                <div className="flex items-center gap-6">
-                                    <OasisLogo size="lg" />
-                                    <div>
-                                        <h1 className="text-5xl font-black text-slate-900 tracking-tighter uppercase leading-none">Fazenda Oásis</h1>
-                                        <h2 className="text-lg font-bold text-emerald-600 uppercase tracking-widest mt-2">Leitura Diária Poços Artesianos</h2>
-                                    </div>
-                                </div>
-                                <div className="text-right">
-                                    <p className="text-3xl font-black text-slate-400 uppercase tracking-tighter">{new Date().toLocaleDateString('pt-BR')}</p>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-3 gap-8">
-                                <div className="bg-slate-50 p-10 rounded-[2.5rem] border-2 border-slate-100 text-center">
-                                    <p className="text-[11px] font-black text-slate-400 uppercase mb-2 tracking-widest">Vazão Total</p>
-                                    <p className="text-5xl font-black text-blue-600">{stats.total.toLocaleString('pt-BR')} <span className="text-lg">L/h</span></p>
-                                </div>
-                                <div className="bg-slate-50 p-10 rounded-[2.5rem] border-2 border-slate-100 text-center">
-                                    <p className="text-[11px] font-black text-slate-400 uppercase mb-2 tracking-widest">Poços Registrados</p>
-                                    <p className="text-5xl font-black text-emerald-600">{stats.ativos}</p>
-                                </div>
-                                <div className="bg-slate-50 p-10 rounded-[2.5rem] border-2 border-slate-100 text-center">
-                                    <p className="text-[11px] font-black text-slate-400 uppercase mb-2 tracking-widest">Média do Dia</p>
-                                    <p className="text-5xl font-black text-slate-800">{stats.media.toLocaleString('pt-BR', {maximumFractionDigits:0})}</p>
-                                </div>
-                            </div>
-
-                            <div className="space-y-4">
-                                <div className="flex bg-[#062C1B] text-white p-6 rounded-3xl text-[11px] font-black uppercase tracking-[0.25em]">
-                                    <span className="w-1/3">Identificação do Poço</span>
-                                    <span className="w-1/3 text-center">Tempo (Base 15L)</span>
-                                    <span className="w-1/3 text-right">Vazão Estimada (L/h)</span>
-                                </div>
-                                {registros.map(r => (
-                                    <div key={r.id} className="flex items-center p-8 border-b-2 border-slate-50">
-                                        <div className="w-1/3 font-black text-4xl text-slate-900 tracking-tighter">{r.bloco}</div>
-                                        <div className="w-1/3 text-center text-2xl font-bold text-slate-400">{r.segundos}s</div>
-                                        <div className="w-1/3 text-right font-black text-4xl text-emerald-700">
-                                            {r.vazaoCalculada.toLocaleString('pt-BR', {maximumFractionDigits:0})}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-
-                            <div className="pt-16 text-center border-t border-slate-100">
-                                <p className="text-[12px] font-black text-slate-300 uppercase tracking-[0.6em]">Fazenda Oásis • Gestão Inteligente de Recursos Hídricos</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* INTERFACE PRINCIPAL */}
-                    <header className="bg-[#062C1B] text-white pt-10 pb-12 px-6 sticky top-0 z-40 shadow-2xl border-b-4 border-emerald-500/20">
-                        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row justify-between items-center gap-10">
-                            <div className="flex flex-col items-center lg:items-start gap-3">
-                                <div className="flex items-center gap-6">
+                    {/* Cabeçalho Ajustado - Sem Sticky para evitar cobrir inputs */}
+                    <header className="bg-[#062C1B] text-white px-6 py-8 md:py-12 border-b-4 border-emerald-500/30">
+                        <div className="max-w-5xl mx-auto">
+                            <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-8">
+                                <div className="flex items-center gap-4">
                                     <OasisLogo />
-                                    <div className="hidden sm:block">
-                                        <h1 className="text-4xl font-[900] tracking-tighter uppercase leading-none">Fazenda Oásis</h1>
-                                        <h2 className="text-[10px] font-bold text-emerald-400 uppercase tracking-[0.3em] mt-1">Leitura Diária Poços Artesianos</h2>
+                                    <div className="h-10 w-[2px] bg-white/20 hidden md:block"></div>
+                                    <div>
+                                        <h1 className="text-2xl md:text-3xl font-[900] tracking-tighter uppercase leading-none">Fazenda Oásis</h1>
+                                        <h2 className="text-[9px] font-bold text-emerald-400 uppercase tracking-[0.2em] mt-1">Leitura de Poços Artesianos</h2>
                                     </div>
-                                </div>
-                            </div>
-                            
-                            <div className="flex flex-wrap justify-center gap-8 items-center glass-effect p-6 rounded-[2.5rem] border border-white/10 text-slate-900">
-                                <div className="text-center px-2">
-                                    <p className="text-[9px] font-black text-emerald-700 uppercase mb-1 tracking-widest">Total Geral</p>
-                                    <p className="text-3xl font-black tracking-tighter">{stats.total.toLocaleString('pt-BR')} <span className="text-xs">L/h</span></p>
-                                </div>
-                                <div className="w-px h-10 bg-slate-200 hidden sm:block"></div>
-                                <div className="text-center px-2">
-                                    <p className="text-[9px] font-black text-emerald-700 uppercase mb-1 tracking-widest">Ativos</p>
-                                    <p className="text-3xl font-black tracking-tighter">{stats.ativos}</p>
                                 </div>
                                 <button 
                                     onClick={exportPDF} 
-                                    disabled={isExporting || registros.length === 0} 
-                                    className="bg-emerald-600 hover:bg-emerald-500 text-white disabled:opacity-50 transition-all px-8 py-5 rounded-2xl font-black text-[11px] uppercase flex items-center gap-3 shadow-lg hover:-translate-y-1"
+                                    disabled={isExporting || registros.length === 0}
+                                    className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-xl transition-all disabled:opacity-30"
                                 >
-                                    {isExporting ? "Gerando PDF..." : <><SvgIcon name="fileText" className="w-5 h-5" /> Exportar Relatório</>}
+                                    <SvgIcon name="fileText" /> {isExporting ? "A gerar..." : "Exportar PDF"}
                                 </button>
+                            </div>
+
+                            {/* Painel de Indicadores - Vazão Média Reinserida */}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div className="bg-white/5 border border-white/10 rounded-2xl p-5 text-center">
+                                    <p className="text-[9px] font-bold text-emerald-400 uppercase tracking-widest mb-1">Vazão Total</p>
+                                    <p className="text-2xl font-black">{stats.total.toLocaleString('pt-BR', {maximumFractionDigits:0})} <span className="text-[10px] opacity-40 font-normal">L/h</span></p>
+                                </div>
+                                <div className="bg-white/5 border border-white/10 rounded-2xl p-5 text-center">
+                                    <p className="text-[9px] font-bold text-emerald-400 uppercase tracking-widest mb-1">Poços Medidos</p>
+                                    <p className="text-2xl font-black">{stats.count}</p>
+                                </div>
+                                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-5 text-center">
+                                    <p className="text-[9px] font-bold text-emerald-400 uppercase tracking-widest mb-1">Vazão Média</p>
+                                    <p className="text-2xl font-black text-emerald-300">{stats.media.toLocaleString('pt-BR', {maximumFractionDigits:0})} <span className="text-[10px] opacity-40 font-normal">L/h</span></p>
+                                </div>
                             </div>
                         </div>
                     </header>
 
-                    <main className="max-w-7xl mx-auto px-6 mt-16 grid lg:grid-cols-2 gap-16 items-start pb-32">
-                        {/* Formulário com mais espaço */}
-                        <section>
-                            <div className="bg-white p-12 rounded-[3.5rem] shadow-2xl border border-slate-100 sticky top-52">
-                                <div className="flex items-center gap-4 mb-10">
-                                    <div className="w-4 h-4 rounded-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]"></div>
-                                    <h2 className="text-[13px] font-black uppercase text-slate-400 tracking-[0.2em]">
-                                        {editingId ? "Editar Leitura" : "Registrar Novo Poço"}
+                    <main className="max-w-5xl mx-auto px-6 py-10">
+                        {/* Formulário com espaçamento corrigido */}
+                        <section className="mb-12">
+                            <div className="bg-white p-6 md:p-10 rounded-[2rem] shadow-sm border border-slate-200">
+                                <div className="flex items-center gap-3 mb-6">
+                                    <div className="w-2 h-6 bg-emerald-500 rounded-full"></div>
+                                    <h2 className="text-[11px] font-black uppercase text-slate-400 tracking-widest">
+                                        {editingId ? "Editar Registo" : "Nova Medição"}
                                     </h2>
                                 </div>
                                 
-                                <form onSubmit={handleSave} className="space-y-8">
-                                    <div>
-                                        <label className="text-[11px] font-black text-slate-400 uppercase ml-2 mb-3 block tracking-widest">Identificação (Poço)</label>
+                                <form onSubmit={handleSave} className="grid md:grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Identificação do Poço</label>
                                         <input 
-                                            type="text" required placeholder="Ex: POÇO 01"
+                                            type="text" required placeholder="EX: POÇO 01"
                                             value={formData.bloco} onChange={e => setFormData({...formData, bloco: e.target.value.toUpperCase()})}
-                                            className="w-full p-6 bg-slate-50 border-2 border-slate-100 rounded-3xl font-black text-2xl focus:border-emerald-500 focus:bg-white outline-none uppercase transition-all shadow-inner"
+                                            className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-xl font-bold text-lg focus:border-emerald-500 outline-none transition-all"
                                         />
                                     </div>
-                                    <div>
-                                        <label className="text-[11px] font-black text-slate-400 uppercase ml-2 mb-3 block tracking-widest">Segundos (para 15 Litros)</label>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Tempo em Segundos (15 Litros)</label>
                                         <div className="relative">
                                             <input 
                                                 type="number" step="0.01" required placeholder="0.00"
                                                 value={formData.segundos} onChange={e => setFormData({...formData, segundos: e.target.value})}
-                                                className="w-full p-10 bg-emerald-50/50 border-2 border-emerald-100 rounded-[2.5rem] font-black text-6xl text-emerald-800 outline-none focus:border-emerald-500 focus:bg-white transition-all text-center pr-16"
+                                                className="w-full p-4 bg-emerald-50/30 border-2 border-emerald-100 rounded-xl font-bold text-lg text-emerald-900 focus:border-emerald-500 outline-none"
                                             />
-                                            <span className="absolute right-10 top-1/2 -translate-y-1/2 font-black text-emerald-200 text-2xl uppercase">seg</span>
+                                            <span className="absolute right-4 top-1/2 -translate-y-1/2 font-black text-emerald-200 text-xs">SEG</span>
                                         </div>
                                     </div>
-                                    <div className="flex gap-4 pt-4">
+                                    <div className="md:col-span-2 pt-2">
+                                        <button 
+                                            type="submit" 
+                                            className="w-full bg-slate-900 text-white font-black py-4 rounded-xl shadow-lg uppercase tracking-widest text-xs flex items-center justify-center gap-3 active:scale-95 transition-transform"
+                                        >
+                                            <SvgIcon name={editingId ? "edit" : "plus"} className="w-5 h-5" />
+                                            {editingId ? "Salvar Alterações" : "Registrar Vazão"}
+                                        </button>
                                         {editingId && (
                                             <button 
                                                 type="button" 
                                                 onClick={() => { setEditingId(null); setFormData({bloco:'', segundos:''})}} 
-                                                className="flex-1 bg-slate-100 text-slate-400 font-black py-6 rounded-3xl uppercase tracking-widest text-xs hover:bg-slate-200"
+                                                className="w-full mt-3 py-3 text-slate-400 font-bold uppercase text-[10px] tracking-widest"
                                             >
-                                                Cancelar
+                                                Cancelar Edição
                                             </button>
                                         )}
-                                        <button 
-                                            type="submit" 
-                                            className="flex-[2] bg-emerald-700 text-white font-black py-7 rounded-3xl shadow-xl shadow-emerald-900/10 uppercase tracking-[0.2em] text-sm hover:bg-emerald-600 transition-all active:scale-95 flex items-center justify-center gap-3"
-                                        >
-                                            <SvgIcon name={editingId ? "edit" : "plus"} />
-                                            {editingId ? "Atualizar" : "Salvar Registro"}
-                                        </button>
                                     </div>
                                 </form>
                             </div>
                         </section>
 
-                        {/* Lista de Registros */}
-                        <section className="space-y-10">
-                            <div className="flex justify-between items-center px-4">
-                                <div>
-                                    <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic">Histórico Diário</h2>
-                                    <div className="h-1.5 w-12 bg-emerald-500 rounded-full mt-2"></div>
+                        {/* Listagem de Resultados */}
+                        <div className="space-y-4">
+                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] px-2 flex justify-between">
+                                <span>Histórico do Dia</span>
+                                <span className="text-emerald-500">{registros.length} registos</span>
+                            </h3>
+                            
+                            {registros.length === 0 ? (
+                                <div className="py-20 text-center border-2 border-dashed border-slate-200 rounded-[2rem] bg-white/50">
+                                    <p className="text-slate-300 font-bold uppercase text-[10px] tracking-widest">Nenhuma medição registrada ainda</p>
                                 </div>
-                                <span className="text-[10px] font-black text-slate-500 bg-white border-2 border-slate-50 px-5 py-2.5 rounded-full shadow-sm tracking-widest">
-                                    {registros.length} LEITURAS
-                                </span>
-                            </div>
-
-                            <div className="grid gap-6">
-                                {registros.length === 0 ? (
-                                    <div className="bg-white p-32 rounded-[3.5rem] border-4 border-dashed border-slate-100 text-center">
-                                        <p className="text-slate-200 font-black uppercase text-xs tracking-[0.4em]">Nenhum dado cadastrado hoje</p>
-                                    </div>
-                                ) : registros.map(reg => (
-                                    <div key={reg.id} className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm hover:shadow-xl hover:border-emerald-100 transition-all group">
-                                        <div className="flex justify-between items-start">
-                                            <div className="space-y-3">
-                                                <h3 className="text-5xl font-[900] text-slate-900 tracking-tighter leading-none">{reg.bloco}</h3>
-                                                <div className="flex items-center gap-4">
-                                                    <span className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 bg-slate-50 px-3 py-1.5 rounded-lg border">
-                                                        <SvgIcon name="clock" className="w-3 h-3" /> {reg.dataRegistro}
-                                                    </span>
-                                                    <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100">
-                                                        {reg.segundos}s p/ 15L
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="text-5xl font-[900] text-emerald-700 tracking-tighter leading-none">
-                                                    {reg.vazaoCalculada.toLocaleString('pt-BR', {maximumFractionDigits:0})}
-                                                </p>
-                                                <p className="text-[11px] font-black text-slate-300 uppercase mt-2 tracking-widest">Litros / Hora</p>
-                                            </div>
+                            ) : registros.map(reg => (
+                                <div key={reg.id} className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4">
+                                    <div className="flex items-center gap-5 w-full sm:w-auto">
+                                        <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center font-black text-white text-sm">
+                                            {reg.bloco.substring(0,2)}
                                         </div>
-                                        
-                                        <div className="mt-10 pt-8 border-t border-slate-50 flex justify-end gap-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button 
-                                                onClick={() => { setEditingId(reg.id); setFormData({bloco: reg.bloco, segundos: reg.segundos}); window.scrollTo({top: 0, behavior:'smooth'}) }}
-                                                className="flex items-center gap-2 px-6 py-4 rounded-2xl bg-slate-50 text-slate-500 font-black text-[10px] uppercase hover:bg-amber-500 hover:text-white transition-all shadow-sm"
-                                            >
-                                                <SvgIcon name="edit" className="w-3.5 h-3.5" /> Editar
+                                        <div>
+                                            <h4 className="font-black text-slate-900 uppercase">{reg.bloco}</h4>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase">{reg.dataRegistro} • {reg.segundos}s</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-6 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-t-0 pt-4 sm:pt-0">
+                                        <div className="text-right">
+                                            <p className="text-2xl font-black text-emerald-600 tracking-tighter">
+                                                {reg.vazaoCalculada.toLocaleString('pt-BR', {maximumFractionDigits:0})}
+                                            </p>
+                                            <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest">L/h</p>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button onClick={() => { setEditingId(reg.id); setFormData({bloco: reg.bloco, segundos: reg.segundos}); window.scrollTo({top: 0, behavior:'smooth'}) }} className="p-2 bg-slate-50 text-slate-400 rounded-lg hover:text-emerald-600 transition-colors">
+                                                <SvgIcon name="edit" />
                                             </button>
-                                            <button 
-                                                onClick={() => handleDelete(reg.id)}
-                                                className="flex items-center gap-2 px-6 py-4 rounded-2xl bg-slate-50 text-slate-400 font-black text-[10px] uppercase hover:bg-red-500 hover:text-white transition-all shadow-sm"
-                                            >
-                                                <SvgIcon name="trash" className="w-3.5 h-3.5" /> Excluir
+                                            <button onClick={() => { if(confirm("Deseja apagar este registo?")) saveToLocal(registros.filter(r => r.id !== reg.id)) }} className="p-2 bg-slate-50 text-slate-400 rounded-lg hover:text-red-500 transition-colors">
+                                                <SvgIcon name="trash" />
                                             </button>
                                         </div>
                                     </div>
-                                ))}
-                            </div>
-                        </section>
+                                </div>
+                            ))}
+                        </div>
                     </main>
 
-                    {/* Footer Estilizado */}
-                    <footer className="fixed bottom-0 left-0 right-0 p-4 pointer-events-none">
-                        <div className="max-w-7xl mx-auto flex justify-center">
-                            <div className="bg-[#062C1B]/90 backdrop-blur-md px-10 py-4 rounded-full border border-white/10 shadow-2xl pointer-events-auto">
-                                <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.5em]">Fazenda Oásis • 2026</p>
+                    {/* Template PDF - Otimizado e com Média */}
+                    <div style={{ position: 'absolute', left: '-9999px', top: '0' }}>
+                        <div id="pdf-template" ref={reportRef} className="w-[800px] bg-white p-12 text-slate-900">
+                            <div className="flex justify-between items-end border-b-2 border-slate-900 pb-8 mb-8">
+                                <div className="flex items-center gap-5">
+                                    <OasisLogo size="lg" />
+                                    <div>
+                                        <h1 className="text-3xl font-black uppercase tracking-tighter">Fazenda Oásis</h1>
+                                        <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest">Relatório de Vazão Diária</p>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-xl font-black text-slate-300 uppercase">{new Date().toLocaleDateString('pt-BR')}</p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-4 mb-8">
+                                <div className="bg-slate-50 border p-6 rounded-2xl text-center">
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Vazão Total</p>
+                                    <p className="text-3xl font-black">{stats.total.toLocaleString('pt-BR', {maximumFractionDigits:0})} <span className="text-xs font-normal">L/h</span></p>
+                                </div>
+                                <div className="bg-slate-50 border p-6 rounded-2xl text-center">
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Poços Registrados</p>
+                                    <p className="text-3xl font-black text-emerald-700">{stats.count}</p>
+                                </div>
+                                <div className="bg-slate-50 border p-6 rounded-2xl text-center">
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Média L/h</p>
+                                    <p className="text-3xl font-black text-slate-900">{stats.media.toLocaleString('pt-BR', {maximumFractionDigits:0})}</p>
+                                </div>
+                            </div>
+
+                            <div className="bg-slate-900 rounded-xl overflow-hidden">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="text-white text-[10px] font-black uppercase tracking-widest border-b border-white/10">
+                                            <th className="p-4 text-left">Identificação do Poço</th>
+                                            <th className="p-4 text-center">Tempo (Base 15L)</th>
+                                            <th className="p-4 text-right">Vazão Calculada (L/h)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="bg-white">
+                                        {registros.map((r, idx) => (
+                                            <tr key={idx} className="border-b border-slate-100">
+                                                <td className="p-5 font-black text-xl">{r.bloco}</td>
+                                                <td className="p-5 text-center font-bold text-slate-400">{r.segundos}s</td>
+                                                <td className="p-5 text-right font-black text-xl text-emerald-700">{r.vazaoCalculada.toLocaleString('pt-BR', {maximumFractionDigits:0})}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div className="mt-12 pt-8 border-t border-dashed border-slate-200 text-center">
+                                <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.5em]">Fazenda Oásis • Gestão de Recursos Hídricos</p>
                             </div>
                         </div>
+                    </div>
+
+                    <footer className="mt-20 py-10 border-t border-slate-200 text-center">
+                        <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.4em]">Fazenda Oásis • 2024</p>
                     </footer>
                 </div>
             );
