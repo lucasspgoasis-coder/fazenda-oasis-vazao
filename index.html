@@ -202,7 +202,7 @@
                                     <p className="text-xl font-black">{stats.ativos} <span className="text-[10px] text-slate-400">On / {stats.inativos} Off</span></p>
                                 </div>
                                 <div className="flex gap-2 ml-2">
-                                    <button onClick={exportJPEG} className="p-3 bg-white hover:bg-slate-50 text-slate-600 rounded-xl transition-all shadow-sm border border-slate-100">
+                                    <button onClick={exportJPEG} title="Exportar Imagem" className="p-3 bg-white hover:bg-slate-50 text-slate-600 rounded-xl transition-all shadow-sm border border-slate-100">
                                         <SvgIcon name="image" className="w-4 h-4" />
                                     </button>
                                     <button onClick={exportPDF} className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-3 rounded-xl font-black text-[9px] uppercase flex items-center gap-2 shadow-lg transition-all">
@@ -265,8 +265,8 @@
                                             </div>
                                             <div className="flex items-center gap-8">
                                                 <div className="text-center">
-                                                    <p className="text-[8px] font-black text-slate-300 uppercase">Tempo</p>
-                                                    <p className="text-sm font-bold text-slate-400">{reg.segundos}s</p>
+                                                    <p className="text-[8px] font-black text-slate-400 uppercase">Tempo</p>
+                                                    <p className="text-sm font-black text-slate-800 tracking-tight">{reg.segundos}s</p>
                                                 </div>
                                                 <div className="text-right min-w-[100px]">
                                                     <p className={`text-2xl font-black leading-none ${reg.status === 'ligado' ? 'text-emerald-700' : 'text-red-600'}`}>
@@ -316,7 +316,7 @@
                                     </div>
                                     <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200 text-right">
                                         <p className="text-[9px] font-black text-slate-400 uppercase mb-2 tracking-widest">Status Poços</p>
-                                        <p className="text-3xl font-black text-slate-800">{stats.ativos} <span className="text-xs text-emerald-500 uppercase">On</span> / {stats.inativos} <span className="text-xs text-red-500 uppercase">Off</span></p>
+                                        <p className="text-3xl font-black text-slate-800">{stats.ativos} <span className="text-xs text-emerald-500 uppercase font-black">On</span> / {stats.inativos} <span className="text-xs text-red-500 uppercase font-black">Off</span></p>
                                     </div>
                                 </div>
 
@@ -333,7 +333,7 @@
                                             <div className="w-1/4 text-center">
                                                 <span className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${r.status === 'ligado' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>{r.status}</span>
                                             </div>
-                                            <div className="w-1/4 text-center text-xl font-bold text-slate-300 italic">{r.segundos}s</div>
+                                            <div className="w-1/4 text-center text-xl font-black text-slate-800 italic">{r.segundos}s</div>
                                             <div className="w-1/4 text-right px-2">
                                                 <span className={`text-4xl font-black tracking-tighter ${r.status === 'ligado' ? 'text-emerald-900' : 'text-red-600'}`}>
                                                     {r.vazaoCalculada.toLocaleString('pt-BR', {maximumFractionDigits:0})}
