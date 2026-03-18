@@ -176,8 +176,8 @@
                             <div className="flex items-center gap-5">
                                 <img src={OASIS_LOGO_URL} alt="Logo" className="h-12 logo-img" crossOrigin="anonymous" />
                                 <div>
-                                    <h1 className="text-2xl font-black uppercase tracking-tighter leading-none">Fazenda Oásis</h1>
-                                    <p className="text-[9px] font-bold text-emerald-400 uppercase tracking-widest mt-0.5">Gestão Hídrica</p>
+                                    <h1 className="text-2xl font-black uppercase tracking-tighter leading-none mb-2">Fazenda Oásis</h1>
+                                    <p className="text-[9px] font-bold text-emerald-400 uppercase tracking-widest mt-2">Gestão Hídrica</p>
                                 </div>
                             </div>
                             
@@ -189,7 +189,7 @@
                                 <div className="w-px h-6 bg-slate-200"></div>
                                 <div className="text-center px-3">
                                     <p className="text-[8px] font-black text-red-700 uppercase mb-0.5 tracking-widest">Total Off</p>
-                                    <p className="text-xl font-black text-red-900/60">{stats.totalDesligados.toLocaleString('pt-BR', {maximumFractionDigits:0})} <span className="text-[10px]">L/h</span></p>
+                                    <p className="text-xl font-black text-red-600">{stats.totalDesligados.toLocaleString('pt-BR', {maximumFractionDigits:0})} <span className="text-[10px]">L/h</span></p>
                                 </div>
                                 <div className="w-px h-6 bg-slate-200"></div>
                                 <div className="text-center px-3">
@@ -248,8 +248,8 @@
                         </aside>
 
                         {/* LISTA */}
-                        <section className="space-y-4">
-                            <h2 className="text-xl font-black text-slate-800 uppercase italic px-2">Histórico</h2>
+                        <section className="space-y-4 pb-20">
+                            <h2 className="text-xl font-black text-slate-800 uppercase italic px-2">Histórico de Coletas</h2>
                             {registros.length === 0 ? (
                                 <div className="bg-white rounded-3xl border-2 border-dashed border-slate-200 p-16 text-center text-slate-300 font-black uppercase text-[10px] tracking-widest">Sem registros</div>
                             ) : (
@@ -269,7 +269,9 @@
                                                     <p className="text-sm font-bold text-slate-400">{reg.segundos}s</p>
                                                 </div>
                                                 <div className="text-right min-w-[100px]">
-                                                    <p className={`text-2xl font-black leading-none ${reg.status === 'ligado' ? 'text-emerald-700' : 'text-slate-300'}`}>{reg.vazaoCalculada.toLocaleString('pt-BR', {maximumFractionDigits:0})}</p>
+                                                    <p className={`text-2xl font-black leading-none ${reg.status === 'ligado' ? 'text-emerald-700' : 'text-red-600'}`}>
+                                                        {reg.vazaoCalculada.toLocaleString('pt-BR', {maximumFractionDigits:0})}
+                                                    </p>
                                                     <p className="text-[8px] font-black text-slate-300 uppercase mt-0.5">L / h</p>
                                                 </div>
                                                 <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-all">
@@ -292,8 +294,8 @@
                                     <div className="flex items-center gap-6">
                                         <img src={OASIS_LOGO_URL} alt="Logo" className="h-16" crossOrigin="anonymous" />
                                         <div>
-                                            <h1 className="text-4xl font-black text-slate-900 uppercase tracking-tighter">Fazenda Oásis</h1>
-                                            <p className="text-emerald-600 font-bold tracking-[0.2em] text-sm uppercase">Relatório de Vazão Hídrica</p>
+                                            <h1 className="text-4xl font-black text-slate-900 uppercase tracking-tighter mb-4">Fazenda Oásis</h1>
+                                            <p className="text-emerald-600 font-bold tracking-[0.2em] text-sm uppercase mt-4">Relatório de Vazão Hídrica</p>
                                         </div>
                                     </div>
                                     <p className="text-slate-900 font-black text-3xl italic">{new Date().toLocaleDateString('pt-BR')}</p>
@@ -306,24 +308,24 @@
                                     </div>
                                     <div className="bg-red-50 p-6 rounded-3xl border border-red-100">
                                         <p className="text-[9px] font-black text-red-800 uppercase mb-2 tracking-widest">Vazão Total (OFF)</p>
-                                        <p className="text-4xl font-black text-red-900">{stats.totalDesligados.toLocaleString('pt-BR', {maximumFractionDigits:0})} <span className="text-sm">L/h</span></p>
+                                        <p className="text-4xl font-black text-red-600">{stats.totalDesligados.toLocaleString('pt-BR', {maximumFractionDigits:0})} <span className="text-sm">L/h</span></p>
                                     </div>
                                     <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200 text-center">
-                                        <p className="text-[9px] font-black text-slate-400 uppercase mb-2 tracking-widest">Média da Rede (ON)</p>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase mb-2 tracking-widest">Média (ON)</p>
                                         <p className="text-4xl font-black text-slate-700">{stats.media.toLocaleString('pt-BR', {maximumFractionDigits:0})} <span className="text-sm">L/h</span></p>
                                     </div>
                                     <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200 text-right">
-                                        <p className="text-[9px] font-black text-slate-400 uppercase mb-2 tracking-widest">Contagem</p>
-                                        <p className="text-3xl font-black text-slate-800">{stats.ativos} <span className="text-xs text-slate-400">On</span> / {stats.inativos} <span className="text-xs text-slate-400">Off</span></p>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase mb-2 tracking-widest">Status Poços</p>
+                                        <p className="text-3xl font-black text-slate-800">{stats.ativos} <span className="text-xs text-emerald-500 uppercase">On</span> / {stats.inativos} <span className="text-xs text-red-500 uppercase">Off</span></p>
                                     </div>
                                 </div>
 
                                 <div className="space-y-2">
                                     <div className="flex bg-[#062C1B] text-white p-4 rounded-xl font-black uppercase text-[10px] tracking-widest">
-                                        <span className="w-1/4 px-2">Identificação do Poço</span>
+                                        <span className="w-1/4 px-2">Poço</span>
                                         <span className="w-1/4 text-center">Status</span>
                                         <span className="w-1/4 text-center">Tempo (15L)</span>
-                                        <span className="w-1/4 text-right px-2">Vazão (L/h)</span>
+                                        <span className="w-1/4 text-right px-2">Vazão Calculada (L/h)</span>
                                     </div>
                                     {registros.map(r => (
                                         <div key={r.id} className="flex items-center p-6 border-b border-slate-100">
@@ -333,13 +335,15 @@
                                             </div>
                                             <div className="w-1/4 text-center text-xl font-bold text-slate-300 italic">{r.segundos}s</div>
                                             <div className="w-1/4 text-right px-2">
-                                                <span className={`text-4xl font-black tracking-tighter ${r.status === 'ligado' ? 'text-emerald-900' : 'text-slate-200'}`}>{r.vazaoCalculada.toLocaleString('pt-BR', {maximumFractionDigits:0})}</span>
+                                                <span className={`text-4xl font-black tracking-tighter ${r.status === 'ligado' ? 'text-emerald-900' : 'text-red-600'}`}>
+                                                    {r.vazaoCalculada.toLocaleString('pt-BR', {maximumFractionDigits:0})}
+                                                </span>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
-                                <div className="mt-12 text-center">
-                                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em]">Relatório Gerado Automaticamente • Fazenda Oásis</p>
+                                <div className="mt-12 text-center border-t border-slate-100 pt-8">
+                                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em]">Relatório Gerado Automaticamente • Fazenda Oásis • Gestão Hídrica 2026</p>
                                 </div>
                             </div>
                         </div>
