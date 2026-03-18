@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Oasis - Leitura Diária</title>
+    <title>Fazenda Oásis - Gestão de Vazão</title>
     <!-- Tailwind CSS para Estilização -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- React e Babel -->
@@ -14,12 +14,20 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+        body { 
+            font-family: 'Inter', sans-serif; 
+            letter-spacing: -0.01em;
+        }
         .logo-img { object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1)); }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
     </style>
 </head>
-<body class="bg-slate-100">
+<body class="bg-[#F8FAFC]">
     <div id="root"></div>
 
     <script type="text/babel">
@@ -29,9 +37,9 @@
         const OASIS_LOGO_URL = "https://i.imgur.com/fx8tSao.png";
 
         const OasisLogo = ({ size = "md" }) => {
-            const iconSize = size === "lg" ? "h-24" : "h-14";
+            const iconSize = size === "lg" ? "h-28" : "h-16";
             return (
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
                     <img src={OASIS_LOGO_URL} alt="Oasis Logo" className={`${iconSize} logo-img block`} crossOrigin="anonymous" />
                 </div>
             );
@@ -42,9 +50,10 @@
                 trash: <><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></>,
                 edit: <><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></>,
                 fileText: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></>,
-                clock: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>
+                clock: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
+                plus: <><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></>
             };
-            return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{icons[name]}</svg>;
+            return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>{icons[name]}</svg>;
         };
 
         function App() {
@@ -56,7 +65,6 @@
             const [formData, setFormData] = useState({ bloco: '', segundos: '' });
             const reportRef = useRef(null);
 
-            // Carregar dados do LocalStorage ao iniciar
             useEffect(() => {
                 const localData = localStorage.getItem('oasis_vazao_data');
                 if (localData) {
@@ -65,7 +73,6 @@
                 setLoading(false);
             }, []);
 
-            // Função para salvar no LocalStorage
             const saveToLocal = (data) => {
                 localStorage.setItem('oasis_vazao_data', JSON.stringify(data));
                 setRegistros(data);
@@ -74,18 +81,12 @@
             const stats = useMemo(() => {
                 const total = registros.reduce((acc, curr) => acc + (Number(curr.vazaoCalculada) || 0), 0);
                 const media = registros.length > 0 ? total / registros.length : 0;
-                return { 
-                    total, 
-                    media, 
-                    ativos: new Set(registros.map(r => r.bloco)).size,
-                    count: registros.length
-                };
+                return { total, media, ativos: new Set(registros.map(r => r.bloco)).size };
             }, [registros]);
 
             const handleSave = (e) => {
                 e.preventDefault();
                 setIsSaving(true);
-                
                 const segs = parseFloat(formData.segundos);
                 const vazao = (15 / segs) * 3600;
 
@@ -120,162 +121,175 @@
             const exportPDF = async () => {
                 setIsExporting(true);
                 const template = reportRef.current;
-                template.style.height = "auto"; 
+                template.style.display = "block";
                 template.style.opacity = "1";
                 
                 await new Promise(r => setTimeout(r, 800));
                 
                 const canvas = await html2canvas(template, { 
-                    scale: 2, 
+                    scale: 3, 
                     useCORS: true, 
                     allowTaint: true,
                     backgroundColor: "#ffffff"
                 });
                 
-                template.style.height = "0"; 
-                template.style.opacity = "0";
+                template.style.display = "none";
                 
-                const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                const imgData = canvas.toDataURL('image/jpeg', 1.0);
                 const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
                 const pdfWidth = 210;
                 const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
                 
                 pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-                pdf.save(`Oasis_Relatorio_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
+                pdf.save(`Fazenda_Oasis_Relatorio_Vazao.pdf`);
                 setIsExporting(false);
             };
 
             if (loading) return (
-                <div className="min-h-screen bg-emerald-950 flex items-center justify-center text-white font-black uppercase tracking-widest">
-                    Iniciando Sistema Oasis...
+                <div className="min-h-screen bg-[#062C1B] flex flex-col items-center justify-center text-white p-10">
+                    <OasisLogo size="lg" />
+                    <div className="mt-8 font-black uppercase tracking-[0.3em] animate-pulse text-sm text-emerald-400">Carregando Sistema...</div>
                 </div>
             );
 
             return (
-                <div className="min-h-screen pb-20">
+                <div className="min-h-screen">
                     
-                    {/* TEMPLATE PDF OCULTO */}
-                    <div style={{ height: 0, overflow: 'hidden', opacity: 0 }} ref={reportRef}>
-                        <div className="w-[800px] bg-white p-12 space-y-10">
-                            <div className="flex justify-between items-center border-b-8 border-emerald-900 pb-8">
-                                <OasisLogo size="lg" />
+                    {/* TEMPLATE PDF OCULTO (Ajustado para o novo layout) */}
+                    <div style={{ display: 'none' }} ref={reportRef}>
+                        <div className="w-[1000px] bg-white p-16 space-y-12">
+                            <div className="flex justify-between items-end border-b-4 border-emerald-900 pb-10">
+                                <div className="flex items-center gap-6">
+                                    <OasisLogo size="lg" />
+                                    <div>
+                                        <h1 className="text-5xl font-black text-slate-900 tracking-tighter uppercase leading-none">Fazenda Oásis</h1>
+                                        <h2 className="text-lg font-bold text-emerald-600 uppercase tracking-widest mt-2">Leitura Diária Poços Artesianos</h2>
+                                    </div>
+                                </div>
                                 <div className="text-right">
-                                    <p className="text-2xl font-black text-slate-800">{new Date().toLocaleDateString('pt-BR')}</p>
-                                    <p className="text-sm font-bold text-emerald-600 uppercase tracking-widest">Relatório de Vazão Diária</p>
+                                    <p className="text-3xl font-black text-slate-400 uppercase tracking-tighter">{new Date().toLocaleDateString('pt-BR')}</p>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-3 gap-6">
-                                <div className="bg-slate-50 p-8 rounded-[2rem] border text-center">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Vazão Total</p>
-                                    <p className="text-4xl font-black text-blue-600">{stats.total.toLocaleString('pt-BR')} <small className="text-xs">L/h</small></p>
+                            <div className="grid grid-cols-3 gap-8">
+                                <div className="bg-slate-50 p-10 rounded-[2.5rem] border-2 border-slate-100 text-center">
+                                    <p className="text-[11px] font-black text-slate-400 uppercase mb-2 tracking-widest">Vazão Total</p>
+                                    <p className="text-5xl font-black text-blue-600">{stats.total.toLocaleString('pt-BR')} <span className="text-lg">L/h</span></p>
                                 </div>
-                                <div className="bg-slate-50 p-8 rounded-[2rem] border text-center">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Poços Registrados</p>
-                                    <p className="text-4xl font-black text-emerald-600">{stats.ativos}</p>
+                                <div className="bg-slate-50 p-10 rounded-[2.5rem] border-2 border-slate-100 text-center">
+                                    <p className="text-[11px] font-black text-slate-400 uppercase mb-2 tracking-widest">Poços Registrados</p>
+                                    <p className="text-5xl font-black text-emerald-600">{stats.ativos}</p>
                                 </div>
-                                <div className="bg-slate-50 p-8 rounded-[2rem] border text-center">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Média L/h</p>
-                                    <p className="text-4xl font-black text-slate-800">{stats.media.toLocaleString('pt-BR', {maximumFractionDigits:0})}</p>
+                                <div className="bg-slate-50 p-10 rounded-[2.5rem] border-2 border-slate-100 text-center">
+                                    <p className="text-[11px] font-black text-slate-400 uppercase mb-2 tracking-widest">Média do Dia</p>
+                                    <p className="text-5xl font-black text-slate-800">{stats.media.toLocaleString('pt-BR', {maximumFractionDigits:0})}</p>
                                 </div>
                             </div>
 
                             <div className="space-y-4">
-                                <div className="flex bg-emerald-950 text-white p-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em]">
+                                <div className="flex bg-[#062C1B] text-white p-6 rounded-3xl text-[11px] font-black uppercase tracking-[0.25em]">
                                     <span className="w-1/3">Identificação do Poço</span>
                                     <span className="w-1/3 text-center">Tempo (Base 15L)</span>
-                                    <span className="w-1/3 text-right">Vazão Calculada (L/h)</span>
+                                    <span className="w-1/3 text-right">Vazão Estimada (L/h)</span>
                                 </div>
                                 {registros.map(r => (
-                                    <div key={r.id} className="flex items-center p-6 border-b border-slate-100">
-                                        <div className="w-1/3 font-black text-3xl text-slate-900">{r.bloco}</div>
-                                        <div className="w-1/3 text-center text-xl font-bold text-slate-400">{r.segundos}s</div>
-                                        <div className="w-1/3 text-right font-black text-3xl text-emerald-700">
+                                    <div key={r.id} className="flex items-center p-8 border-b-2 border-slate-50">
+                                        <div className="w-1/3 font-black text-4xl text-slate-900 tracking-tighter">{r.bloco}</div>
+                                        <div className="w-1/3 text-center text-2xl font-bold text-slate-400">{r.segundos}s</div>
+                                        <div className="w-1/3 text-right font-black text-4xl text-emerald-700">
                                             {r.vazaoCalculada.toLocaleString('pt-BR', {maximumFractionDigits:0})}
                                         </div>
                                     </div>
                                 ))}
                             </div>
 
-                            <div className="pt-10 text-center border-t border-slate-100">
-                                <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.5em]">Fazenda Oasis • Gestão de Recursos Hídricos</p>
+                            <div className="pt-16 text-center border-t border-slate-100">
+                                <p className="text-[12px] font-black text-slate-300 uppercase tracking-[0.6em]">Fazenda Oásis • Gestão Inteligente de Recursos Hídricos</p>
                             </div>
                         </div>
                     </div>
 
-                    {/* INTERFACE DO USUÁRIO */}
-                    <header className="bg-emerald-950 text-white p-6 sticky top-0 z-40 shadow-2xl border-b border-white/5">
-                        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-                            <div className="flex flex-col items-center md:items-start">
-                                <OasisLogo />
-                                <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest mt-2 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-                                    Modo de Operação Local
-                                </span>
+                    {/* INTERFACE PRINCIPAL */}
+                    <header className="bg-[#062C1B] text-white pt-10 pb-12 px-6 sticky top-0 z-40 shadow-2xl border-b-4 border-emerald-500/20">
+                        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row justify-between items-center gap-10">
+                            <div className="flex flex-col items-center lg:items-start gap-3">
+                                <div className="flex items-center gap-6">
+                                    <OasisLogo />
+                                    <div className="hidden sm:block">
+                                        <h1 className="text-4xl font-[900] tracking-tighter uppercase leading-none">Fazenda Oásis</h1>
+                                        <h2 className="text-[10px] font-bold text-emerald-400 uppercase tracking-[0.3em] mt-1">Leitura Diária Poços Artesianos</h2>
+                                    </div>
+                                </div>
                             </div>
                             
-                            <div className="flex flex-wrap justify-center gap-6 items-center bg-white/5 p-4 rounded-[2rem] border border-white/10">
-                                <div className="text-center px-4">
-                                    <p className="text-[8px] font-bold text-emerald-500 uppercase mb-1">Total L/h</p>
-                                    <p className="text-xl font-black">{stats.total.toLocaleString('pt-BR')}</p>
+                            <div className="flex flex-wrap justify-center gap-8 items-center glass-effect p-6 rounded-[2.5rem] border border-white/10 text-slate-900">
+                                <div className="text-center px-2">
+                                    <p className="text-[9px] font-black text-emerald-700 uppercase mb-1 tracking-widest">Total Geral</p>
+                                    <p className="text-3xl font-black tracking-tighter">{stats.total.toLocaleString('pt-BR')} <span className="text-xs">L/h</span></p>
                                 </div>
-                                <div className="text-center px-4 border-l border-white/10">
-                                    <p className="text-[8px] font-bold text-emerald-500 uppercase mb-1">Poços</p>
-                                    <p className="text-xl font-black">{stats.ativos}</p>
+                                <div className="w-px h-10 bg-slate-200 hidden sm:block"></div>
+                                <div className="text-center px-2">
+                                    <p className="text-[9px] font-black text-emerald-700 uppercase mb-1 tracking-widest">Ativos</p>
+                                    <p className="text-3xl font-black tracking-tighter">{stats.ativos}</p>
                                 </div>
                                 <button 
                                     onClick={exportPDF} 
                                     disabled={isExporting || registros.length === 0} 
-                                    className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 transition-all px-6 py-4 rounded-2xl font-black text-[10px] uppercase flex items-center gap-2 shadow-lg"
+                                    className="bg-emerald-600 hover:bg-emerald-500 text-white disabled:opacity-50 transition-all px-8 py-5 rounded-2xl font-black text-[11px] uppercase flex items-center gap-3 shadow-lg hover:-translate-y-1"
                                 >
-                                    {isExporting ? "A Gerar..." : <><SvgIcon name="fileText" /> Exportar PDF</>}
+                                    {isExporting ? "Gerando PDF..." : <><SvgIcon name="fileText" className="w-5 h-5" /> Exportar Relatório</>}
                                 </button>
                             </div>
                         </div>
                     </header>
 
-                    <main className="max-w-7xl mx-auto px-4 mt-10 grid lg:grid-cols-2 gap-12">
-                        {/* Formulário */}
+                    <main className="max-w-7xl mx-auto px-6 mt-16 grid lg:grid-cols-2 gap-16 items-start pb-32">
+                        {/* Formulário com mais espaço */}
                         <section>
-                            <div className="bg-white p-10 rounded-[3rem] shadow-xl border border-slate-200 sticky top-48">
-                                <div className="flex items-center gap-3 mb-8">
-                                    <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
-                                    <h2 className="text-[12px] font-black uppercase text-slate-400 tracking-widest">
-                                        {editingId ? "Editar Registro" : "Nova Leitura"}
+                            <div className="bg-white p-12 rounded-[3.5rem] shadow-2xl border border-slate-100 sticky top-52">
+                                <div className="flex items-center gap-4 mb-10">
+                                    <div className="w-4 h-4 rounded-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]"></div>
+                                    <h2 className="text-[13px] font-black uppercase text-slate-400 tracking-[0.2em]">
+                                        {editingId ? "Editar Leitura" : "Registrar Novo Poço"}
                                     </h2>
                                 </div>
                                 
-                                <form onSubmit={handleSave} className="space-y-6">
+                                <form onSubmit={handleSave} className="space-y-8">
                                     <div>
-                                        <label className="text-[10px] font-black text-slate-400 uppercase ml-4 mb-2 block">Identificação do Poço</label>
+                                        <label className="text-[11px] font-black text-slate-400 uppercase ml-2 mb-3 block tracking-widest">Identificação (Poço)</label>
                                         <input 
-                                            type="text" required placeholder="Ex: P01, Sede, etc"
+                                            type="text" required placeholder="Ex: POÇO 01"
                                             value={formData.bloco} onChange={e => setFormData({...formData, bloco: e.target.value.toUpperCase()})}
-                                            className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-3xl font-black text-xl focus:border-emerald-500 outline-none uppercase transition-all"
+                                            className="w-full p-6 bg-slate-50 border-2 border-slate-100 rounded-3xl font-black text-2xl focus:border-emerald-500 focus:bg-white outline-none uppercase transition-all shadow-inner"
                                         />
                                     </div>
                                     <div>
-                                        <label className="text-[10px] font-black text-slate-400 uppercase ml-4 mb-2 block">Segundos (para 15 Litros)</label>
-                                        <input 
-                                            type="number" step="0.01" required placeholder="0.00"
-                                            value={formData.segundos} onChange={e => setFormData({...formData, segundos: e.target.value})}
-                                            className="w-full p-8 bg-emerald-50 border-2 border-emerald-100 rounded-[2rem] font-black text-5xl text-emerald-700 outline-none focus:border-emerald-500 transition-all"
-                                        />
+                                        <label className="text-[11px] font-black text-slate-400 uppercase ml-2 mb-3 block tracking-widest">Segundos (para 15 Litros)</label>
+                                        <div className="relative">
+                                            <input 
+                                                type="number" step="0.01" required placeholder="0.00"
+                                                value={formData.segundos} onChange={e => setFormData({...formData, segundos: e.target.value})}
+                                                className="w-full p-10 bg-emerald-50/50 border-2 border-emerald-100 rounded-[2.5rem] font-black text-6xl text-emerald-800 outline-none focus:border-emerald-500 focus:bg-white transition-all text-center pr-16"
+                                            />
+                                            <span className="absolute right-10 top-1/2 -translate-y-1/2 font-black text-emerald-200 text-2xl uppercase">seg</span>
+                                        </div>
                                     </div>
-                                    <div className="flex gap-3">
+                                    <div className="flex gap-4 pt-4">
                                         {editingId && (
                                             <button 
                                                 type="button" 
                                                 onClick={() => { setEditingId(null); setFormData({bloco:'', segundos:''})}} 
-                                                className="flex-1 bg-slate-200 text-slate-500 font-black py-6 rounded-3xl uppercase tracking-widest text-xs"
+                                                className="flex-1 bg-slate-100 text-slate-400 font-black py-6 rounded-3xl uppercase tracking-widest text-xs hover:bg-slate-200"
                                             >
                                                 Cancelar
                                             </button>
                                         )}
                                         <button 
                                             type="submit" 
-                                            className="flex-[2] bg-emerald-600 text-white font-black py-6 rounded-3xl shadow-xl uppercase tracking-widest hover:bg-emerald-700 transition-all active:scale-95"
+                                            className="flex-[2] bg-emerald-700 text-white font-black py-7 rounded-3xl shadow-xl shadow-emerald-900/10 uppercase tracking-[0.2em] text-sm hover:bg-emerald-600 transition-all active:scale-95 flex items-center justify-center gap-3"
                                         >
-                                            {editingId ? "Atualizar Dados" : "Salvar Registro"}
+                                            <SvgIcon name={editingId ? "edit" : "plus"} />
+                                            {editingId ? "Atualizar" : "Salvar Registro"}
                                         </button>
                                     </div>
                                 </form>
@@ -283,48 +297,56 @@
                         </section>
 
                         {/* Lista de Registros */}
-                        <section className="space-y-6">
-                            <div className="flex justify-between items-end px-4">
-                                <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tighter italic">Leituras Recentes</h2>
-                                <span className="text-[10px] font-black text-slate-400 bg-white border px-4 py-2 rounded-full shadow-sm">
-                                    {registros.length} Poços Hoje
+                        <section className="space-y-10">
+                            <div className="flex justify-between items-center px-4">
+                                <div>
+                                    <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic">Histórico Diário</h2>
+                                    <div className="h-1.5 w-12 bg-emerald-500 rounded-full mt-2"></div>
+                                </div>
+                                <span className="text-[10px] font-black text-slate-500 bg-white border-2 border-slate-50 px-5 py-2.5 rounded-full shadow-sm tracking-widest">
+                                    {registros.length} LEITURAS
                                 </span>
                             </div>
 
-                            <div className="grid gap-5">
+                            <div className="grid gap-6">
                                 {registros.length === 0 ? (
-                                    <div className="bg-white p-24 rounded-[3rem] border-2 border-dashed border-slate-200 text-center">
-                                        <p className="text-slate-300 font-black uppercase text-xs tracking-[0.3em]">Nenhum dado registrado</p>
+                                    <div className="bg-white p-32 rounded-[3.5rem] border-4 border-dashed border-slate-100 text-center">
+                                        <p className="text-slate-200 font-black uppercase text-xs tracking-[0.4em]">Nenhum dado cadastrado hoje</p>
                                     </div>
                                 ) : registros.map(reg => (
-                                    <div key={reg.id} className="bg-white rounded-[2.5rem] p-8 border border-slate-200 shadow-sm hover:shadow-md hover:border-emerald-200 transition-all group">
+                                    <div key={reg.id} className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm hover:shadow-xl hover:border-emerald-100 transition-all group">
                                         <div className="flex justify-between items-start">
-                                            <div>
-                                                <h3 className="text-4xl font-[900] text-slate-900 uppercase tracking-tighter leading-none">{reg.bloco}</h3>
-                                                <p className="text-[10px] font-bold text-slate-400 uppercase mt-3 flex items-center gap-2">
-                                                    <SvgIcon name="clock" className="w-3 h-3" /> {reg.dataRegistro} • {reg.segundos}s p/ 15L
-                                                </p>
+                                            <div className="space-y-3">
+                                                <h3 className="text-5xl font-[900] text-slate-900 tracking-tighter leading-none">{reg.bloco}</h3>
+                                                <div className="flex items-center gap-4">
+                                                    <span className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 bg-slate-50 px-3 py-1.5 rounded-lg border">
+                                                        <SvgIcon name="clock" className="w-3 h-3" /> {reg.dataRegistro}
+                                                    </span>
+                                                    <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100">
+                                                        {reg.segundos}s p/ 15L
+                                                    </span>
+                                                </div>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-4xl font-[900] text-emerald-600 leading-none tracking-tighter">
+                                                <p className="text-5xl font-[900] text-emerald-700 tracking-tighter leading-none">
                                                     {reg.vazaoCalculada.toLocaleString('pt-BR', {maximumFractionDigits:0})}
                                                 </p>
-                                                <p className="text-[10px] font-black text-slate-300 uppercase mt-2 tracking-widest">Litros / Hora</p>
+                                                <p className="text-[11px] font-black text-slate-300 uppercase mt-2 tracking-widest">Litros / Hora</p>
                                             </div>
                                         </div>
                                         
-                                        <div className="mt-8 pt-6 border-t border-slate-50 flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div className="mt-10 pt-8 border-t border-slate-50 flex justify-end gap-4 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <button 
                                                 onClick={() => { setEditingId(reg.id); setFormData({bloco: reg.bloco, segundos: reg.segundos}); window.scrollTo({top: 0, behavior:'smooth'}) }}
-                                                className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-amber-50 text-amber-600 font-black text-[10px] uppercase hover:bg-amber-100 transition-all"
+                                                className="flex items-center gap-2 px-6 py-4 rounded-2xl bg-slate-50 text-slate-500 font-black text-[10px] uppercase hover:bg-amber-500 hover:text-white transition-all shadow-sm"
                                             >
-                                                <SvgIcon name="edit" /> Editar
+                                                <SvgIcon name="edit" className="w-3.5 h-3.5" /> Editar
                                             </button>
                                             <button 
                                                 onClick={() => handleDelete(reg.id)}
-                                                className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-red-50 text-red-400 font-black text-[10px] uppercase hover:bg-red-100 transition-all"
+                                                className="flex items-center gap-2 px-6 py-4 rounded-2xl bg-slate-50 text-slate-400 font-black text-[10px] uppercase hover:bg-red-500 hover:text-white transition-all shadow-sm"
                                             >
-                                                <SvgIcon name="trash" /> Excluir
+                                                <SvgIcon name="trash" className="w-3.5 h-3.5" /> Excluir
                                             </button>
                                         </div>
                                     </div>
@@ -332,6 +354,15 @@
                             </div>
                         </section>
                     </main>
+
+                    {/* Footer Estilizado */}
+                    <footer className="fixed bottom-0 left-0 right-0 p-4 pointer-events-none">
+                        <div className="max-w-7xl mx-auto flex justify-center">
+                            <div className="bg-[#062C1B]/90 backdrop-blur-md px-10 py-4 rounded-full border border-white/10 shadow-2xl pointer-events-auto">
+                                <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.5em]">Fazenda Oásis • 2026</p>
+                            </div>
+                        </div>
+                    </footer>
                 </div>
             );
         }
