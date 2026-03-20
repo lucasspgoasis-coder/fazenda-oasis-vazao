@@ -4,13 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fazenda Oásis - Gestão de Vazão</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- React e Babel -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Bibliotecas de Exportação -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
@@ -51,8 +48,6 @@
         const { useState, useEffect, useMemo, useRef } = React;
 
         const OASIS_LOGO_URL = "https://i.imgur.com/fx8tSao.png";
-
-        // Lista de poços de 01 a 17
         const POCOS_LIST = Array.from({ length: 17 }, (_, i) => `POÇO ${String(i + 1).padStart(2, '0')}`);
 
         const SvgIcon = ({ name, className = "w-4 h-4" }) => {
@@ -60,9 +55,9 @@
                 trash: <><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></>,
                 edit: <><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></>,
                 fileText: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></>,
-                clock: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
                 plus: <><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></>,
-                image: <><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></>
+                image: <><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></>,
+                refresh: <><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></>
             };
             return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>{icons[name]}</svg>;
         };
@@ -77,14 +72,20 @@
             const reportRef = useRef(null);
 
             useEffect(() => {
-                const localData = localStorage.getItem('oasis_vazao_data_v3');
+                const localData = localStorage.getItem('oasis_vazao_vfinal');
                 if (localData) setRegistros(JSON.parse(localData));
                 setLoading(false);
             }, []);
 
             const saveToLocal = (data) => {
-                localStorage.setItem('oasis_vazao_data_v3', JSON.stringify(data));
+                localStorage.setItem('oasis_vazao_vfinal', JSON.stringify(data));
                 setRegistros(data);
+            };
+
+            const clearAllData = () => {
+                if(confirm("Deseja realmente apagar TODOS os registros? Isso deve ser feito ao iniciar um novo dia.")) {
+                    saveToLocal([]);
+                }
             };
 
             const registrosOrdenados = useMemo(() => {
@@ -93,15 +94,17 @@
 
             const stats = useMemo(() => {
                 const ligados = registros.filter(r => r.status === 'ligado');
+                const desligados = registros.filter(r => r.status === 'desligado');
+                
                 const somaLigados = ligados.reduce((acc, curr) => acc + (Number(curr.vazaoCalculada) || 0), 0);
-                const somaDesligados = registros.filter(r => r.status === 'desligado').reduce((acc, curr) => acc + (Number(curr.vazaoCalculada) || 0), 0);
+                const somaDesligados = desligados.reduce((acc, curr) => acc + (Number(curr.vazaoCalculada) || 0), 0);
                 
                 return { 
                     totalLigados: somaLigados,
                     totalDesligados: somaDesligados,
                     media: ligados.length > 0 ? somaLigados / ligados.length : 0,
                     ativos: ligados.length,
-                    inativos: registros.filter(r => r.status === 'desligado').length
+                    inativos: desligados.length
                 };
             }, [registros]);
 
@@ -120,7 +123,6 @@
                 const segsStr = formData.segundos.replace(",", ".");
                 const segs = parseFloat(segsStr) || 0;
                 const vazao = segs > 0 ? (15 / segs) * 3600 : 0;
-                
                 const agora = new Date();
 
                 const payload = {
@@ -152,7 +154,6 @@
                 setIsExporting(true);
                 setShowExportTemplate(true);
                 await new Promise(r => setTimeout(r, 800));
-                
                 const element = reportRef.current;
                 const canvas = await html2canvas(element, {
                     scale: 2,
@@ -161,7 +162,6 @@
                     backgroundColor: "#ffffff",
                     windowWidth: 1200
                 });
-                
                 setShowExportTemplate(false);
                 setIsExporting(false);
                 return canvas;
@@ -175,13 +175,13 @@
                 const pdfWidth = pdf.internal.pageSize.getWidth();
                 const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
                 pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-                pdf.save(`Relatorio_Vazao_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
+                pdf.save(`Fazenda_Oasis_Vazao_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
             };
 
             const exportJPEG = async () => {
                 const canvas = await captureReport();
                 const link = document.createElement('a');
-                link.download = `Relatorio_Vazao_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.jpg`;
+                link.download = `Fazenda_Oasis_Vazao_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.jpg`;
                 link.href = canvas.toDataURL('image/jpeg', 0.98);
                 link.click();
             };
@@ -191,7 +191,7 @@
             return (
                 <div className="min-h-screen flex flex-col bg-[#F1F5F9]">
                     
-                    {/* HEADER */}
+                    {/* APP NAVBAR */}
                     <header className="bg-[#062C1B] text-white p-5 shadow-xl z-50 sticky top-0 border-b-4 border-emerald-500/20">
                         <div className="max-w-[1500px] mx-auto flex flex-col xl:flex-row justify-between items-center gap-6">
                             <div className="flex items-center gap-5">
@@ -209,8 +209,8 @@
                                 </div>
                                 <div className="w-px h-6 bg-slate-200"></div>
                                 <div className="text-center px-3">
-                                    <p className="text-[8px] font-black text-red-700 uppercase mb-0.5 tracking-widest">Total Off</p>
-                                    <p className="text-xl font-black text-red-600">{stats.totalDesligados.toLocaleString('pt-BR', {maximumFractionDigits:0})} <span className="text-[10px]">L/h</span></p>
+                                    <p className="text-[8px] font-black text-slate-500 uppercase mb-0.5 tracking-widest text-center">Média (On)</p>
+                                    <p className="text-xl font-black">{stats.media.toLocaleString('pt-BR', {maximumFractionDigits:0})} <span className="text-[10px]">L/h</span></p>
                                 </div>
                                 <div className="w-px h-6 bg-slate-200"></div>
                                 <div className="text-center px-3">
@@ -218,6 +218,9 @@
                                     <p className="text-xl font-black">{stats.ativos} <span className="text-[10px] text-slate-400">On / {stats.inativos} Off</span></p>
                                 </div>
                                 <div className="flex gap-2 ml-2">
+                                    <button onClick={clearAllData} title="Limpar Tudo" className="p-3 bg-white hover:bg-red-50 text-red-500 rounded-xl transition-all shadow-sm border border-slate-100">
+                                        <SvgIcon name="refresh" className="w-4 h-4" />
+                                    </button>
                                     <button onClick={exportJPEG} title="Exportar Imagem" className="p-3 bg-white hover:bg-slate-50 text-slate-600 rounded-xl transition-all shadow-sm border border-slate-100">
                                         <SvgIcon name="image" className="w-4 h-4" />
                                     </button>
@@ -230,7 +233,6 @@
                     </header>
 
                     <main className="max-w-[1400px] mx-auto w-full grid lg:grid-cols-[400px_1fr] gap-8 p-6 flex-1">
-                        
                         {/* FORMULÁRIO */}
                         <aside>
                             <div className="bg-white p-8 rounded-[2rem] shadow-xl border border-slate-200 sticky top-32">
@@ -248,168 +250,153 @@
                                         <select 
                                             value={formData.bloco} 
                                             onChange={e => setFormData({...formData, bloco: e.target.value})} 
-                                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl font-black text-lg focus:border-emerald-500 outline-none appearance-none cursor-pointer"
+                                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl font-black text-lg focus:border-emerald-500 outline-none cursor-pointer"
                                         >
                                             {POCOS_LIST.map(p => <option key={p} value={p}>{p}</option>)}
                                         </select>
                                     </div>
-                                    
                                     <div>
                                         <label className="text-[9px] font-black text-slate-400 uppercase ml-1 mb-1.5 block">Tempo (15 Litros)</label>
                                         <div className="relative">
-                                            <input 
-                                                type="text" 
-                                                inputMode="numeric"
-                                                required 
-                                                placeholder="0,00" 
-                                                value={formData.segundos} 
-                                                onChange={handleSecondsChange}
-                                                className={`w-full p-6 rounded-2xl font-black text-4xl text-center outline-none border transition-colors ${formData.status === 'ligado' ? 'bg-emerald-50 border-emerald-100 text-emerald-800' : 'bg-red-50 border-red-100 text-red-800'}`} 
-                                            />
+                                            <input type="text" inputMode="numeric" required placeholder="0,00" value={formData.segundos} onChange={handleSecondsChange} className={`w-full p-6 rounded-2xl font-black text-4xl text-center outline-none border transition-colors ${formData.status === 'ligado' ? 'bg-emerald-50 border-emerald-100 text-emerald-800' : 'bg-red-50 border-red-100 text-red-800'}`} />
                                             <span className="absolute right-4 bottom-4 text-[8px] font-black text-slate-400 uppercase">seg</span>
                                         </div>
                                     </div>
-
-                                    <button type="submit" className={`w-full text-white font-black py-4 rounded-xl shadow-lg uppercase text-[10px] flex items-center justify-center gap-2 transition-all active:scale-95 ${formData.status === 'ligado' ? 'bg-emerald-700 hover:bg-emerald-600' : 'bg-red-700 hover:bg-red-600'}`}>
+                                    <button type="submit" className={`w-full text-white font-black py-4 rounded-xl shadow-lg uppercase text-[10px] flex items-center justify-center gap-2 transition-all ${formData.status === 'ligado' ? 'bg-emerald-700 hover:bg-emerald-600' : 'bg-red-700 hover:bg-red-600'}`}>
                                         <SvgIcon name={editingId ? "edit" : "plus"} /> {editingId ? "Atualizar" : "Salvar Registro"}
                                     </button>
                                 </form>
                             </div>
                         </aside>
 
-                        {/* LISTA HISTÓRICO */}
+                        {/* LISTA APP */}
                         <section className="space-y-4 pb-20">
                             <div className="flex justify-between items-center px-2">
-                                <h2 className="text-xl font-black text-slate-800 uppercase italic">Poços Registrados</h2>
-                                <span className="text-[9px] font-bold bg-slate-200 text-slate-500 px-2 py-1 rounded">Ordenação Alfabética</span>
+                                <h2 className="text-xl font-black text-slate-800 uppercase italic">Histórico de Medições</h2>
+                                {registros.length > 0 && (
+                                    <button onClick={clearAllData} className="text-[9px] font-black text-red-500 uppercase flex items-center gap-2 bg-red-50 px-3 py-1.5 rounded-lg border border-red-100 hover:bg-red-100 transition-all">
+                                        <SvgIcon name="refresh" className="w-3 h-3" /> Limpar Histórico
+                                    </button>
+                                )}
                             </div>
-                            
-                            {registrosOrdenados.length === 0 ? (
-                                <div className="bg-white rounded-3xl border-2 border-dashed border-slate-200 p-16 text-center text-slate-300 font-black uppercase text-[10px] tracking-widest">Nenhum dado inserido</div>
-                            ) : (
-                                <div className="grid gap-3">
-                                    {registrosOrdenados.map(reg => (
-                                        <div key={reg.id} className="bg-white rounded-2xl p-4 border border-slate-200 flex items-center justify-between group hover:shadow-lg transition-all">
-                                            <div className="flex items-center gap-4">
-                                                <div className={`w-2 h-10 rounded-full ${reg.status === 'ligado' ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
-                                                <div>
-                                                    <h3 className="text-2xl font-black text-slate-900 leading-none">{reg.bloco}</h3>
-                                                    <p className="text-[8px] font-bold text-slate-400 uppercase mt-1 italic">{reg.dataRegistro} às {reg.horaRegistro}</p>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-8">
-                                                <div className="text-center">
-                                                    <p className="text-[8px] font-black text-slate-400 uppercase">Tempo</p>
-                                                    <p className="text-sm font-black text-slate-800">{reg.segundos.toString().replace(".", ",")}s</p>
-                                                </div>
-                                                <div className="text-right min-w-[100px]">
-                                                    <p className={`text-2xl font-black leading-none ${reg.status === 'ligado' ? 'text-emerald-700' : 'text-red-600'}`}>
-                                                        {reg.vazaoCalculada.toLocaleString('pt-BR', {maximumFractionDigits:0})}
-                                                    </p>
-                                                    <p className="text-[8px] font-black text-slate-300 uppercase mt-0.5">L / h</p>
-                                                </div>
-                                                <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-all">
-                                                    <button onClick={() => { 
-                                                        setEditingId(reg.id); 
-                                                        setFormData({
-                                                            bloco: reg.bloco, 
-                                                            segundos: reg.segundos.toString().replace(".", ","), 
-                                                            status: reg.status
-                                                        }); 
-                                                        window.scrollTo({top:0, behavior:'smooth'}); 
-                                                    }} className="p-2 bg-slate-50 text-slate-400 rounded-lg hover:bg-amber-500 hover:text-white transition-all"><SvgIcon name="edit" /></button>
-                                                    <button onClick={() => handleDelete(reg.id)} className="p-2 bg-slate-50 text-slate-400 rounded-lg hover:bg-red-600 hover:text-white transition-all"><SvgIcon name="trash" /></button>
-                                                </div>
+                            <div className="grid gap-3">
+                                {registrosOrdenados.map(reg => (
+                                    <div key={reg.id} className="bg-white rounded-2xl p-4 border border-slate-200 flex items-center justify-between group hover:shadow-lg transition-all">
+                                        <div className="flex items-center gap-4">
+                                            <div className={`w-2 h-10 rounded-full ${reg.status === 'ligado' ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
+                                            <div>
+                                                <h3 className="text-2xl font-black text-slate-900 leading-none uppercase">{reg.bloco}</h3>
+                                                <p className="text-[8px] font-bold text-slate-400 uppercase mt-1 italic">{reg.dataRegistro} às {reg.horaRegistro}</p>
                                             </div>
                                         </div>
-                                    ))}
-                                </div>
-                            )}
+                                        <div className="flex items-center gap-8">
+                                            <div className="text-center">
+                                                <p className="text-[8px] font-black text-slate-400 uppercase">Tempo</p>
+                                                <p className="text-sm font-black text-slate-800 italic">{reg.segundos.toString().replace(".", ",")}s</p>
+                                            </div>
+                                            <div className="text-right min-w-[100px]">
+                                                <p className={`text-2xl font-black leading-none ${reg.status === 'ligado' ? 'text-emerald-700' : 'text-red-600'}`}>{reg.vazaoCalculada.toLocaleString('pt-BR', {maximumFractionDigits:0})}</p>
+                                                <p className="text-[8px] font-black text-slate-300 uppercase mt-0.5">L / h</p>
+                                            </div>
+                                            <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-all">
+                                                <button onClick={() => { setEditingId(reg.id); setFormData({bloco: reg.bloco, segundos: reg.segundos.toString().replace(".", ","), status: reg.status}); window.scrollTo({top:0, behavior:'smooth'}); }} className="p-2 bg-slate-50 text-slate-400 rounded-lg hover:bg-emerald-600 hover:text-white transition-all"><SvgIcon name="edit" /></button>
+                                                <button onClick={() => handleDelete(reg.id)} className="p-2 bg-slate-50 text-slate-400 rounded-lg hover:bg-red-600 hover:text-white transition-all"><SvgIcon name="trash" /></button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </section>
                     </main>
 
-                    {/* TEMPLATE DE EXPORTAÇÃO (TAMANHOS AUMENTADOS) */}
+                    {/* TEMPLATE EXPORTAÇÃO (CORREÇÃO DE LARGURA POÇO) */}
                     {showExportTemplate && (
                         <div id="export-container" ref={reportRef}>
-                            <div className="p-16">
-                                {/* Header do Relatório */}
-                                <div className="flex justify-between items-end border-b-8 border-emerald-900 pb-10 mb-12">
-                                    <div className="flex items-center gap-8">
-                                        <img src={OASIS_LOGO_URL} alt="Logo" className="h-20" crossOrigin="anonymous" />
-                                        <div>
-                                            <h1 className="text-5xl font-black text-slate-900 uppercase tracking-tighter mb-2">Fazenda Oásis</h1>
-                                            <p className="text-emerald-600 font-bold tracking-[0.3em] text-lg uppercase">Relatório de Vazão Hídrica</p>
-                                        </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-slate-900 font-black text-4xl italic">{new Date().toLocaleDateString('pt-BR')}</p>
-                                        <p className="text-slate-400 font-bold text-sm uppercase mt-2">Atualizado às {new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</p>
+                            {/* Cabeçalho Todo Verde */}
+                            <div className="bg-[#062C1B] p-16 flex justify-between items-center">
+                                <div className="flex items-center gap-10">
+                                    <img src={OASIS_LOGO_URL} alt="Logo" className="h-24 logo-img" crossOrigin="anonymous" />
+                                    <div>
+                                        <h1 className="text-6xl font-black text-white uppercase tracking-tighter mb-2">Fazenda Oásis</h1>
+                                        <p className="text-emerald-400 font-bold tracking-[0.4em] text-xl uppercase">Relatório de Vazão Hídrica</p>
                                     </div>
                                 </div>
-                                
-                                {/* Cards de Estatísticas */}
-                                <div className="grid grid-cols-4 gap-6 mb-12">
-                                    <div className="bg-emerald-50 p-8 rounded-[2.5rem] border-2 border-emerald-100">
-                                        <p className="text-xs font-black text-emerald-800 uppercase mb-3 tracking-widest">Vazão Total (ON)</p>
-                                        <p className="text-5xl font-black text-emerald-900">{stats.totalLigados.toLocaleString('pt-BR', {maximumFractionDigits:0})} <span className="text-xl">L/h</span></p>
+                                <div className="text-right">
+                                    <p className="text-white font-black text-5xl italic">{new Date().toLocaleDateString('pt-BR')}</p>
+                                    <p className="text-emerald-300/60 font-bold text-lg uppercase mt-2 tracking-widest">Atualizado às {new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</p>
+                                </div>
+                            </div>
+
+                            <div className="p-16">
+                                {/* Dashboard Superior do Relatório */}
+                                <div className="grid grid-cols-4 gap-8 mb-16">
+                                    <div className="bg-emerald-50 p-10 rounded-[2.5rem] border-2 border-emerald-100">
+                                        <p className="text-sm font-black text-emerald-800 uppercase mb-4 tracking-widest">Vazão Total (ON)</p>
+                                        <p className="text-6xl font-black text-emerald-900 tracking-tighter">{stats.totalLigados.toLocaleString('pt-BR', {maximumFractionDigits:0})} <span className="text-xl">L/h</span></p>
                                     </div>
-                                    <div className="bg-red-50 p-8 rounded-[2.5rem] border-2 border-red-100">
-                                        <p className="text-xs font-black text-red-800 uppercase mb-3 tracking-widest">Vazão Total (OFF)</p>
-                                        <p className="text-5xl font-black text-red-600">{stats.totalDesligados.toLocaleString('pt-BR', {maximumFractionDigits:0})} <span className="text-xl">L/h</span></p>
+                                    <div className="bg-red-50 p-10 rounded-[2.5rem] border-2 border-red-100 text-center">
+                                        <p className="text-sm font-black text-red-800 uppercase mb-4 tracking-widest">Vazão Total (OFF)</p>
+                                        <p className="text-6xl font-black text-red-600 tracking-tighter">{stats.totalDesligados.toLocaleString('pt-BR', {maximumFractionDigits:0})} <span className="text-xl">L/h</span></p>
                                     </div>
-                                    <div className="bg-slate-50 p-8 rounded-[2.5rem] border-2 border-slate-200">
-                                        <p className="text-xs font-black text-slate-400 uppercase mb-3 tracking-widest text-center">Média (ON)</p>
-                                        <p className="text-5xl font-black text-slate-700 text-center">{stats.media.toLocaleString('pt-BR', {maximumFractionDigits:0})} <span className="text-xl">L/h</span></p>
+                                    <div className="bg-slate-50 p-10 rounded-[2.5rem] border-2 border-slate-200 text-center">
+                                        <p className="text-sm font-black text-slate-400 uppercase mb-4 tracking-widest">Média (ON)</p>
+                                        <p className="text-6xl font-black text-slate-800 tracking-tighter">{stats.media.toLocaleString('pt-BR', {maximumFractionDigits:0})} <span className="text-xl">L/h</span></p>
                                     </div>
-                                    <div className="bg-slate-50 p-8 rounded-[2.5rem] border-2 border-slate-200 text-right">
-                                        <p className="text-xs font-black text-slate-400 uppercase mb-3 tracking-widest">Status Poços</p>
-                                        <p className="text-4xl font-black text-slate-800">{stats.ativos} <span className="text-sm text-emerald-500 uppercase font-black">On</span> / {stats.inativos} <span className="text-sm text-red-500 uppercase font-black">Off</span></p>
+                                    <div className="bg-slate-50 p-10 rounded-[2.5rem] border-2 border-slate-200 text-right">
+                                        <p className="text-sm font-black text-slate-400 uppercase mb-4 tracking-widest">Status Poços</p>
+                                        <p className="text-5xl font-black text-slate-900 tracking-tighter">{stats.ativos} <span className="text-sm text-emerald-500 uppercase font-black">On</span> / {stats.inativos} <span className="text-sm text-red-500 uppercase font-black">Off</span></p>
                                     </div>
                                 </div>
 
-                                {/* Tabela Aumentada */}
+                                {/* Tabela Corrigida - Aumento da largura da coluna Poço para evitar quebra */}
                                 <div className="space-y-4">
-                                    <div className="flex bg-[#062C1B] text-white p-6 rounded-2xl font-black uppercase text-sm tracking-widest shadow-lg">
-                                        <span className="w-[20%]">Poço</span>
-                                        <span className="w-[15%] text-center">Status</span>
-                                        <span className="w-[20%] text-center">Registro</span>
+                                    <div className="flex bg-[#062C1B] text-white p-8 rounded-3xl font-black uppercase text-lg tracking-[0.2em]">
+                                        <span className="w-[28%]">Poço</span>
+                                        <span className="w-[12%] text-center">Status</span>
+                                        <span className="w-[15%] text-center">Horário</span>
                                         <span className="w-[20%] text-center">Tempo (15L)</span>
-                                        <span className="w-[25%] text-right">Vazão (L/h)</span>
+                                        <span className="w-[25%] text-right pr-4">Vazão (L/h)</span>
                                     </div>
                                     
                                     {registrosOrdenados.map(r => (
-                                        <div key={r.id} className="flex items-center p-8 border-b-2 border-slate-100 hover:bg-slate-50 transition-colors">
-                                            <div className="w-[20%] text-4xl font-black text-slate-900 uppercase tracking-tighter">
+                                        <div key={r.id} className="flex items-center p-10 border-b-4 border-slate-50 hover:bg-slate-50 transition-colors">
+                                            {/* POÇO - Aumentado para 28% e ajustado o tamanho da fonte para text-4xl para caber tudo em uma linha */}
+                                            <div className="w-[28%] text-4xl font-black text-slate-900 uppercase tracking-tighter whitespace-nowrap">
                                                 {r.bloco}
                                             </div>
                                             
-                                            <div className="w-[15%] text-center">
-                                                <span className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest shadow-sm ${r.status === 'ligado' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                                            {/* STATUS */}
+                                            <div className="w-[12%] text-center">
+                                                <span className={`px-6 py-3 rounded-2xl text-[12px] font-black uppercase tracking-widest shadow-sm ${r.status === 'ligado' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
                                                     {r.status}
                                                 </span>
                                             </div>
-
-                                            <div className="w-[20%] text-center text-slate-400 font-bold text-lg">
+                                            
+                                            {/* HORÁRIO */}
+                                            <div className="w-[15%] text-center text-slate-400 font-bold text-2xl italic">
                                                 {r.horaRegistro}
                                             </div>
-
-                                            <div className="w-[20%] text-center text-3xl font-black text-slate-800 italic">
-                                                {r.segundos.toString().replace(".", ",")}s
+                                            
+                                            {/* TEMPO */}
+                                            <div className="w-[20%] text-center">
+                                                <p className="text-4xl font-black text-slate-800 italic">
+                                                    {r.segundos.toString().replace(".", ",")}s
+                                                </p>
                                             </div>
-
-                                            <div className="w-[25%] text-right">
-                                                <span className={`text-5xl font-black tracking-tighter ${r.status === 'ligado' ? 'text-emerald-900' : 'text-red-600'}`}>
+                                            
+                                            {/* VAZÃO */}
+                                            <div className="w-[25%] text-right pr-4">
+                                                <p className={`text-6xl font-black tracking-tighter ${r.status === 'ligado' ? 'text-emerald-900' : 'text-red-600'}`}>
                                                     {r.vazaoCalculada.toLocaleString('pt-BR', {maximumFractionDigits:0})}
-                                                </span>
+                                                </p>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
 
-                                {/* Footer Exportação */}
-                                <div className="mt-20 text-center border-t-2 border-slate-100 pt-10">
-                                    <p className="text-sm font-black text-slate-300 uppercase tracking-[0.5em]">
-                                        Gestão Hídrica Automatizada • Fazenda Oásis • 2026
+                                <div className="mt-24 text-center border-t-4 border-slate-50 pt-12">
+                                    <p className="text-lg font-black text-slate-300 uppercase tracking-[0.6em]">
+                                        Gestão Hídrica • Fazenda Oásis • 2026
                                     </p>
                                 </div>
                             </div>
