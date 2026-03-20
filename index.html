@@ -25,12 +25,13 @@
             -webkit-backdrop-filter: blur(12px);
         }
 
+        /* Container de exportação escondido da tela mas visível para o html2canvas */
         #export-container {
             position: absolute;
             left: -9999px;
             top: 0;
             background: white;
-            width: 1200px;
+            width: 1200px; /* Largura fixa para garantir proporção de relatório */
             display: block !important;
         }
 
@@ -95,10 +96,8 @@
             const stats = useMemo(() => {
                 const ligados = registros.filter(r => r.status === 'ligado');
                 const desligados = registros.filter(r => r.status === 'desligado');
-                
                 const somaLigados = ligados.reduce((acc, curr) => acc + (Number(curr.vazaoCalculada) || 0), 0);
                 const somaDesligados = desligados.reduce((acc, curr) => acc + (Number(curr.vazaoCalculada) || 0), 0);
-                
                 return { 
                     totalLigados: somaLigados,
                     totalDesligados: somaDesligados,
@@ -153,10 +152,10 @@
             const captureReport = async () => {
                 setIsExporting(true);
                 setShowExportTemplate(true);
-                await new Promise(r => setTimeout(r, 800));
+                await new Promise(r => setTimeout(r, 800)); // Tempo para renderizar fontes/imagens
                 const element = reportRef.current;
                 const canvas = await html2canvas(element, {
-                    scale: 2,
+                    scale: 2, // Aumenta a resolução para WhatsApp não embaçar
                     useCORS: true,
                     allowTaint: true,
                     backgroundColor: "#ffffff",
@@ -171,7 +170,7 @@
                 const canvas = await captureReport();
                 const { jsPDF } = window.jspdf;
                 const pdf = new jsPDF('p', 'mm', 'a4');
-                const imgData = canvas.toDataURL('image/jpeg', 0.98);
+                const imgData = canvas.toDataURL('image/jpeg', 1.0);
                 const pdfWidth = pdf.internal.pageSize.getWidth();
                 const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
                 pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
@@ -181,8 +180,8 @@
             const exportJPEG = async () => {
                 const canvas = await captureReport();
                 const link = document.createElement('a');
-                link.download = `Fazenda_Oasis_Vazao_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.jpg`;
-                link.href = canvas.toDataURL('image/jpeg', 0.98);
+                link.download = `Relatorio_Oasis_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.jpg`;
+                link.href = canvas.toDataURL('image/jpeg', 0.95);
                 link.click();
             };
 
@@ -221,11 +220,11 @@
                                     <button onClick={clearAllData} title="Limpar Tudo" className="p-3 bg-white hover:bg-red-50 text-red-500 rounded-xl transition-all shadow-sm border border-slate-100">
                                         <SvgIcon name="refresh" className="w-4 h-4" />
                                     </button>
-                                    <button onClick={exportJPEG} title="Exportar Imagem" className="p-3 bg-white hover:bg-slate-50 text-slate-600 rounded-xl transition-all shadow-sm border border-slate-100">
-                                        <SvgIcon name="image" className="w-4 h-4" />
+                                    <button onClick={exportJPEG} title="Exportar para WhatsApp" className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-3 rounded-xl font-black text-[9px] uppercase flex items-center gap-2 shadow-lg transition-all">
+                                        <SvgIcon name="image" /> {isExporting ? "Gerando..." : "WhatsApp (Imagem)"}
                                     </button>
-                                    <button onClick={exportPDF} className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-3 rounded-xl font-black text-[9px] uppercase flex items-center gap-2 shadow-lg transition-all">
-                                        <SvgIcon name="fileText" /> {isExporting ? "Gerando..." : "Relatório"}
+                                    <button onClick={exportPDF} className="bg-slate-800 hover:bg-slate-700 text-white px-5 py-3 rounded-xl font-black text-[9px] uppercase flex items-center gap-2 shadow-lg transition-all">
+                                        <SvgIcon name="fileText" /> PDF
                                     </button>
                                 </div>
                             </div>
@@ -269,15 +268,10 @@
                             </div>
                         </aside>
 
-                        {/* LISTA APP */}
+                        {/* LISTA APP INTERFACE */}
                         <section className="space-y-4 pb-20">
                             <div className="flex justify-between items-center px-2">
                                 <h2 className="text-xl font-black text-slate-800 uppercase italic">Histórico de Medições</h2>
-                                {registros.length > 0 && (
-                                    <button onClick={clearAllData} className="text-[9px] font-black text-red-500 uppercase flex items-center gap-2 bg-red-50 px-3 py-1.5 rounded-lg border border-red-100 hover:bg-red-100 transition-all">
-                                        <SvgIcon name="refresh" className="w-3 h-3" /> Limpar Histórico
-                                    </button>
-                                )}
                             </div>
                             <div className="grid gap-3">
                                 {registrosOrdenados.map(reg => (
@@ -309,10 +303,9 @@
                         </section>
                     </main>
 
-                    {/* TEMPLATE EXPORTAÇÃO (CORREÇÃO DE LARGURA POÇO) */}
+                    {/* TEMPLATE EXPORTAÇÃO (OTIMIZADO PARA WHATSAPP) */}
                     {showExportTemplate && (
                         <div id="export-container" ref={reportRef}>
-                            {/* Cabeçalho Todo Verde */}
                             <div className="bg-[#062C1B] p-16 flex justify-between items-center">
                                 <div className="flex items-center gap-10">
                                     <img src={OASIS_LOGO_URL} alt="Logo" className="h-24 logo-img" crossOrigin="anonymous" />
@@ -328,11 +321,10 @@
                             </div>
 
                             <div className="p-16">
-                                {/* Dashboard Superior do Relatório */}
                                 <div className="grid grid-cols-4 gap-8 mb-16">
                                     <div className="bg-emerald-50 p-10 rounded-[2.5rem] border-2 border-emerald-100">
-                                        <p className="text-sm font-black text-emerald-800 uppercase mb-4 tracking-widest">Vazão Total (ON)</p>
-                                        <p className="text-6xl font-black text-emerald-900 tracking-tighter">{stats.totalLigados.toLocaleString('pt-BR', {maximumFractionDigits:0})} <span className="text-xl">L/h</span></p>
+                                        <p className="text-sm font-black text-emerald-800 uppercase mb-4 tracking-widest text-center">Vazão Total (ON)</p>
+                                        <p className="text-6xl font-black text-emerald-900 tracking-tighter text-center">{stats.totalLigados.toLocaleString('pt-BR', {maximumFractionDigits:0})} <span className="text-xl">L/h</span></p>
                                     </div>
                                     <div className="bg-red-50 p-10 rounded-[2.5rem] border-2 border-red-100 text-center">
                                         <p className="text-sm font-black text-red-800 uppercase mb-4 tracking-widest">Vazão Total (OFF)</p>
@@ -343,48 +335,38 @@
                                         <p className="text-6xl font-black text-slate-800 tracking-tighter">{stats.media.toLocaleString('pt-BR', {maximumFractionDigits:0})} <span className="text-xl">L/h</span></p>
                                     </div>
                                     <div className="bg-slate-50 p-10 rounded-[2.5rem] border-2 border-slate-200 text-right">
-                                        <p className="text-sm font-black text-slate-400 uppercase mb-4 tracking-widest">Status Poços</p>
-                                        <p className="text-5xl font-black text-slate-900 tracking-tighter">{stats.ativos} <span className="text-sm text-emerald-500 uppercase font-black">On</span> / {stats.inativos} <span className="text-sm text-red-500 uppercase font-black">Off</span></p>
+                                        <p className="text-sm font-black text-slate-400 uppercase mb-4 tracking-widest text-center">Status</p>
+                                        <p className="text-5xl font-black text-slate-900 tracking-tighter text-center">{stats.ativos} <span className="text-sm text-emerald-500 uppercase font-black">On</span> / {stats.inativos} <span className="text-sm text-red-500 uppercase font-black">Off</span></p>
                                     </div>
                                 </div>
 
-                                {/* Tabela Corrigida - Aumento da largura da coluna Poço para evitar quebra */}
                                 <div className="space-y-4">
                                     <div className="flex bg-[#062C1B] text-white p-8 rounded-3xl font-black uppercase text-lg tracking-[0.2em]">
-                                        <span className="w-[28%]">Poço</span>
+                                        <span className="w-[30%]">Poço</span>
                                         <span className="w-[12%] text-center">Status</span>
-                                        <span className="w-[15%] text-center">Horário</span>
+                                        <span className="w-[13%] text-center">Hora</span>
                                         <span className="w-[20%] text-center">Tempo (15L)</span>
                                         <span className="w-[25%] text-right pr-4">Vazão (L/h)</span>
                                     </div>
                                     
                                     {registrosOrdenados.map(r => (
                                         <div key={r.id} className="flex items-center p-10 border-b-4 border-slate-50 hover:bg-slate-50 transition-colors">
-                                            {/* POÇO - Aumentado para 28% e ajustado o tamanho da fonte para text-4xl para caber tudo em uma linha */}
-                                            <div className="w-[28%] text-4xl font-black text-slate-900 uppercase tracking-tighter whitespace-nowrap">
+                                            <div className="w-[30%] text-4xl font-black text-slate-900 uppercase tracking-tighter whitespace-nowrap">
                                                 {r.bloco}
                                             </div>
-                                            
-                                            {/* STATUS */}
                                             <div className="w-[12%] text-center">
                                                 <span className={`px-6 py-3 rounded-2xl text-[12px] font-black uppercase tracking-widest shadow-sm ${r.status === 'ligado' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
                                                     {r.status}
                                                 </span>
                                             </div>
-                                            
-                                            {/* HORÁRIO */}
-                                            <div className="w-[15%] text-center text-slate-400 font-bold text-2xl italic">
+                                            <div className="w-[13%] text-center text-slate-400 font-bold text-2xl italic">
                                                 {r.horaRegistro}
                                             </div>
-                                            
-                                            {/* TEMPO */}
                                             <div className="w-[20%] text-center">
                                                 <p className="text-4xl font-black text-slate-800 italic">
                                                     {r.segundos.toString().replace(".", ",")}s
                                                 </p>
                                             </div>
-                                            
-                                            {/* VAZÃO */}
                                             <div className="w-[25%] text-right pr-4">
                                                 <p className={`text-6xl font-black tracking-tighter ${r.status === 'ligado' ? 'text-emerald-900' : 'text-red-600'}`}>
                                                     {r.vazaoCalculada.toLocaleString('pt-BR', {maximumFractionDigits:0})}
