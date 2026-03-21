@@ -121,7 +121,7 @@
         .gradient-dark-green { background: #041E12; }
         .gradient-main-green { background: #064E3B; }
 
-        /* Botões de status aprimorados */
+        /* Botões de status */
         .status-btn {
             flex: 1;
             padding: 14px;
@@ -135,7 +135,6 @@
             cursor: pointer;
         }
         
-        /* Cores Ativas */
         .status-btn-active-on { 
             background: #10B981; 
             color: white; 
@@ -151,23 +150,19 @@
             transform: translateY(-1px);
         }
         
-        /* Estado Inativo */
         .status-btn-inactive { 
             background: #F8FAFC; 
             color: #94A3B8; 
             border-color: #E2E8F0;
         }
-        .status-btn-inactive:hover {
-            border-color: #CBD5E1;
-            background: #F1F5F9;
-        }
 
         /* Export Text Styles */
-        .export-vazao-main { font-size: 110px; font-weight: 900; line-height: 0.9; letter-spacing: -0.04em; }
+        .export-vazao-main { font-size: 100px; font-weight: 900; line-height: 0.9; letter-spacing: -0.04em; }
         .export-vazao-row { font-size: 64px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; }
         .export-seconds-text { font-size: 14px; font-weight: 800; color: #000000; letter-spacing: 0.05em; text-transform: uppercase; }
         
         .text-blue-symbol { color: #3B82F6; }
+        .text-emerald-symbol { color: #10B981; }
     </style>
 </head>
 <body>
@@ -419,12 +414,12 @@
                             </div>
 
                             <div className="p-12 space-y-12">
-                                <div className="premium-card gradient-dark-green text-white h-[450px]">
-                                    <p className="text-emerald-500 font-black uppercase tracking-[0.5em] text-sm mb-12">Vazão Total do Sistema</p>
+                                <div className="premium-card gradient-dark-green text-white h-[380px]">
+                                    <p className="text-emerald-500 font-black uppercase tracking-[0.5em] text-sm mb-8">Vazão Total do Sistema</p>
                                     <p className="export-vazao-main">
                                         {stats.totalVazao.toLocaleString('pt-BR', {maximumFractionDigits:0})}
                                     </p>
-                                    <p className="font-black uppercase tracking-[0.3em] text-xl mt-8 italic text-blue-symbol">Litros por Hora (L/h)</p>
+                                    <p className="font-black uppercase tracking-[0.3em] text-xl mt-6 italic text-emerald-symbol">Litros por Hora (L/h)</p>
                                 </div>
 
                                 <div className="grid grid-cols-3 gap-10">
@@ -436,10 +431,11 @@
                                         <p className="text-[11px] font-black text-slate-300 uppercase tracking-widest mt-4">Média por Unidade</p>
                                     </div>
 
-                                    <div className="premium-card aspect-[1/0.9] bg-emerald-500 text-white border-0 shadow-lg shadow-emerald-100">
-                                        <p className="text-emerald-100 font-black uppercase tracking-widest text-[11px] mb-8">Poços Ativos</p>
+                                    {/* CARD DE POÇOS ATIVOS ATUALIZADO (BRANCO COM TEXTO VERDE) */}
+                                    <div className="premium-card aspect-[1/0.9] bg-white text-emerald-600 border border-slate-100 shadow-lg shadow-slate-100">
+                                        <p className="text-slate-400 font-black uppercase tracking-widest text-[11px] mb-8">Poços Ativos</p>
                                         <p className="text-8xl font-black tracking-tighter">{stats.ativos}</p>
-                                        <p className="text-emerald-100 font-black uppercase tracking-widest text-[11px] mt-8">Unidades em Operação</p>
+                                        <p className="text-emerald-500 font-black uppercase tracking-widest text-[11px] mt-8">Unidades em Operação</p>
                                     </div>
 
                                     <div className="premium-card aspect-[1/0.9]">
