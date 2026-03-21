@@ -24,7 +24,7 @@
             position: absolute;
             left: -9999px;
             top: 0;
-            background: #F8FAFC;
+            background: #FFFFFF;
             width: 1200px;
             display: block !important;
         }
@@ -57,7 +57,7 @@
         .horizontal-ruler-wrapper {
             width: 100%;
             position: relative;
-            padding-bottom: 25px; /* Espaço para os números embaixo */
+            padding-bottom: 25px;
             margin-top: 10px;
         }
 
@@ -74,7 +74,6 @@
         .horizontal-fill {
             height: 100%;
             background: linear-gradient(90deg, #1D4ED8 0%, #3B82F6 100%);
-            transition: width 0.8s ease;
         }
 
         .h-mark {
@@ -96,15 +95,10 @@
             white-space: nowrap;
         }
 
-        /* Tipografia de Exportação Ajustada */
-        .export-num-xl { font-size: 5.5rem !important; line-height: 1; font-weight: 900; letter-spacing: -0.05em; margin: 10px 0; }
-        .export-num-lg { font-size: 3.5rem !important; line-height: 1; font-weight: 900; letter-spacing: -0.03em; margin: 5px 0; }
-        .export-row-vazao { font-size: 3.8rem !important; line-height: 1; font-weight: 900; letter-spacing: -0.05em; }
-
         .premium-card {
             background: white;
             border-radius: 40px;
-            box-shadow: 0 10px 30px -5px rgba(0,0,0,0.08);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -112,28 +106,68 @@
             text-align: center;
             padding: 35px 25px;
             position: relative;
-            border: 1px solid rgba(226, 232, 240, 1);
+            border: 1px solid #F1F5F9;
         }
 
         .card-label-top {
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 0.3em;
-            margin-bottom: 15px;
-            color: #64748B;
-        }
-
-        .card-label-bottom {
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
             letter-spacing: 0.2em;
-            margin-top: 15px;
+            margin-bottom: 15px;
+            color: #94A3B8;
         }
 
         .gradient-dark-green { background: #041E12; }
-        .gradient-main-green { background: linear-gradient(135deg, #064E3B 0%, #065F46 100%); }
+        .gradient-main-green { background: #064E3B; }
+
+        /* Botões de status aprimorados */
+        .status-btn {
+            flex: 1;
+            padding: 14px;
+            border-radius: 16px;
+            font-weight: 800;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid transparent;
+            cursor: pointer;
+        }
+        
+        /* Cores Ativas */
+        .status-btn-active-on { 
+            background: #10B981; 
+            color: white; 
+            border-color: #059669;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            transform: translateY(-1px);
+        }
+        .status-btn-active-off { 
+            background: #EF4444; 
+            color: white; 
+            border-color: #DC2626;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+            transform: translateY(-1px);
+        }
+        
+        /* Estado Inativo */
+        .status-btn-inactive { 
+            background: #F8FAFC; 
+            color: #94A3B8; 
+            border-color: #E2E8F0;
+        }
+        .status-btn-inactive:hover {
+            border-color: #CBD5E1;
+            background: #F1F5F9;
+        }
+
+        /* Export Text Styles */
+        .export-vazao-main { font-size: 110px; font-weight: 900; line-height: 0.9; letter-spacing: -0.04em; }
+        .export-vazao-row { font-size: 64px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; }
+        .export-seconds-text { font-size: 14px; font-weight: 800; color: #000000; letter-spacing: 0.05em; text-transform: uppercase; }
+        
+        .text-blue-symbol { color: #3B82F6; }
     </style>
 </head>
 <body>
@@ -182,21 +216,22 @@
             const exportRef = useRef(null);
 
             useEffect(() => {
-                const data = localStorage.getItem('oasis_vazao_v11');
-                const tank = localStorage.getItem('oasis_tank_v11');
+                const data = localStorage.getItem('oasis_vazao_v17');
+                const tank = localStorage.getItem('oasis_tank_v17');
                 if (data) setRegistros(JSON.parse(data));
                 if (tank) setNivelTanque(tank);
             }, []);
 
             const stats = useMemo(() => {
-                const ligados = registros.filter(r => r.status === 'ligado');
-                const totalVazao = ligados.reduce((acc, curr) => acc + (Number(curr.vazao) || 0), 0);
-                const mediaVazao = ligados.length > 0 ? totalVazao / ligados.length : 0;
+                const totalVazao = registros.reduce((acc, curr) => acc + (Number(curr.vazao) || 0), 0);
+                const ativos = registros.filter(r => r.status === 'ligado').length;
+                const mediaVazao = registros.length > 0 ? totalVazao / registros.length : 0;
+                
                 const metros = parseFloat(nivelTanque.replace(",", ".")) || 0;
                 const porcentagem = (metros / DIVISOR_NIVEL) * 100;
 
                 return { 
-                    totalVazao, mediaVazao, ativos: ligados.length, 
+                    totalVazao, mediaVazao, ativos, 
                     metros, porcentagem,
                     ordenados: [...registros].sort((a, b) => a.bloco.localeCompare(b.bloco))
                 };
@@ -205,12 +240,13 @@
             const handleSave = (e) => {
                 e.preventDefault();
                 const segs = parseFloat(formData.segundos.replace(",", ".")) || 0;
-                const vazao = segs > 0 ? (15 / segs) * 3600 : 0;
-                const novo = { ...formData, vazao, id: Date.now() };
+                const vazaoCalculada = segs > 0 ? (15 / segs) * 3600 : 0;
+                
+                const novo = { ...formData, vazao: vazaoCalculada, id: Date.now() };
                 const filtrados = registros.filter(r => r.bloco !== formData.bloco);
                 const atualizados = [novo, ...filtrados];
                 setRegistros(atualizados);
-                localStorage.setItem('oasis_vazao_v11', JSON.stringify(atualizados));
+                localStorage.setItem('oasis_vazao_v17', JSON.stringify(atualizados));
             };
 
             const exportImage = async () => {
@@ -220,15 +256,15 @@
                     const canvas = await html2canvas(exportRef.current, { 
                         scale: 2,
                         useCORS: true,
-                        backgroundColor: '#F8FAFC'
+                        backgroundColor: '#FFFFFF'
                     });
                     const link = document.createElement('a');
-                    link.download = `Leitura_Diaria_Oasis.jpg`;
-                    link.href = canvas.toDataURL('image/jpeg', 0.9);
+                    link.download = `Relatorio_Oasis_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.jpg`;
+                    link.href = canvas.toDataURL('image/jpeg', 0.95);
                     link.click();
                     setShowExport(false);
                     setIsExporting(false);
-                }, 800);
+                }, 1000);
             };
 
             return (
@@ -239,17 +275,18 @@
                                 <img src={OASIS_LOGO_URL} className="h-10 logo-img" alt="Logo" />
                                 <div>
                                     <h1 className="text-lg font-black uppercase tracking-tight leading-none">Fazenda Oásis</h1>
-                                    <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest mt-1">Gestão Hídrica</p>
+                                    <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest mt-1">Gestão Hídrica Central</p>
                                 </div>
                             </div>
                             <button onClick={exportImage} className="bg-emerald-600 hover:bg-emerald-500 px-6 py-2 rounded-full font-black text-[11px] uppercase flex items-center gap-2 transition-all active:scale-95">
-                                <SvgIcon name="image" /> {isExporting ? "Gerando..." : "Gerar Relatório"}
+                                <SvgIcon name="image" /> {isExporting ? "Processando..." : "Exportar Relatório"}
                             </button>
                         </div>
                     </header>
 
                     <main className="max-w-6xl mx-auto p-6 grid md:grid-cols-[380px_1fr] gap-8 mt-4">
                         <div className="space-y-6">
+                            {/* Nível Tanque */}
                             <div className="bg-white p-6 rounded-[32px] shadow-sm border border-slate-200">
                                 <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-6 text-center">Nível Tanque 03</h3>
                                 <div className="flex gap-10 items-center pl-2">
@@ -262,7 +299,7 @@
                                                 let val = e.target.value.replace(/\D/g, "");
                                                 let formatted = (parseFloat(val || 0) / 100).toFixed(2).replace(".", ",");
                                                 setNivelTanque(formatted);
-                                                localStorage.setItem('oasis_tank_v11', formatted);
+                                                localStorage.setItem('oasis_tank_v17', formatted);
                                             }}
                                             className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl text-center font-black text-4xl text-blue-900 focus:border-blue-500 outline-none"
                                         />
@@ -273,13 +310,38 @@
                                 </div>
                             </div>
 
+                            {/* Registro de Vazão */}
                             <div className="bg-white p-6 rounded-[32px] shadow-sm border border-slate-200">
-                                <form onSubmit={handleSave} className="space-y-5">
-                                    <select value={formData.bloco} onChange={e => setFormData({...formData, bloco: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-black">
-                                        {POCOS_LIST.map(p => <option key={p} value={p}>{p}</option>)}
-                                    </select>
+                                <form onSubmit={handleSave} className="space-y-6">
+                                    <div className="space-y-2">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Selecione a Unidade</p>
+                                        <select value={formData.bloco} onChange={e => setFormData({...formData, bloco: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-black text-center focus:ring-2 focus:ring-emerald-500 outline-none">
+                                            {POCOS_LIST.map(p => <option key={p} value={p}>{p}</option>)}
+                                        </select>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Estado da Operação</p>
+                                        <div className="flex gap-3">
+                                            <button 
+                                                type="button" 
+                                                onClick={() => setFormData({...formData, status: 'ligado'})} 
+                                                className={`status-btn ${formData.status === 'ligado' ? 'status-btn-active-on' : 'status-btn-inactive'}`}
+                                            >
+                                                Ligado
+                                            </button>
+                                            <button 
+                                                type="button" 
+                                                onClick={() => setFormData({...formData, status: 'desligado'})} 
+                                                className={`status-btn ${formData.status === 'desligado' ? 'status-btn-active-off' : 'status-btn-inactive'}`}
+                                            >
+                                                Desligado
+                                            </button>
+                                        </div>
+                                    </div>
+
                                     <div className="space-y-2 text-center">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tempo p/ 15L (Segundos)</p>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cronometragem (Segundos p/ 15L)</p>
                                         <input 
                                             type="text" 
                                             value={formData.segundos}
@@ -288,11 +350,12 @@
                                                 let formatted = (parseFloat(val || 0) / 100).toFixed(2).replace(".", ",");
                                                 setFormData({...formData, segundos: formatted});
                                             }}
-                                            className="w-full p-6 bg-slate-50 border-2 border-slate-200 rounded-2xl text-center font-black text-4xl text-emerald-900 outline-none"
+                                            className="w-full p-6 bg-slate-50 border-2 border-slate-200 rounded-2xl text-center font-black text-4xl text-emerald-900 outline-none focus:border-emerald-500"
                                         />
                                     </div>
-                                    <button className="w-full bg-[#041E12] text-white py-5 rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg active:scale-95 transition-all">
-                                        Salvar Leitura
+
+                                    <button className="w-full bg-[#041E12] text-white py-5 rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg active:scale-95 hover:bg-[#062c1b] transition-all">
+                                        Salvar Produção
                                     </button>
                                 </form>
                             </div>
@@ -301,29 +364,33 @@
                         <div className="space-y-6">
                             <div className="grid grid-cols-3 gap-6">
                                 <div className="bg-[#041E12] p-6 rounded-[30px] text-white text-center">
-                                    <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest mb-1">Total</p>
+                                    <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest mb-1">Vazão Consolidada</p>
                                     <p className="text-4xl font-black leading-none">{stats.totalVazao.toLocaleString('pt-BR', {maximumFractionDigits:0})}</p>
                                 </div>
                                 <div className="bg-white p-6 rounded-[30px] border border-slate-200 text-center">
-                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Média</p>
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Vazão Média</p>
                                     <p className="text-4xl font-black text-blue-600 leading-none">{stats.mediaVazao.toLocaleString('pt-BR', {maximumFractionDigits:0})}</p>
                                 </div>
                                 <div className="bg-emerald-500 p-6 rounded-[30px] text-white text-center">
-                                    <p className="text-[9px] font-black text-emerald-100 uppercase tracking-widest mb-1">Poços</p>
+                                    <p className="text-[9px] font-black text-emerald-100 uppercase tracking-widest mb-1">Poços Ativos</p>
                                     <p className="text-4xl font-black leading-none">{stats.ativos}</p>
                                 </div>
                             </div>
 
                             <div className="bg-white rounded-[32px] border border-slate-200 overflow-hidden shadow-sm">
                                 {stats.ordenados.map(reg => (
-                                    <div key={reg.id} className="p-5 border-b border-slate-50 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                                        <div className="pl-4">
-                                            <span className="text-xl font-black text-slate-800 tracking-tight">{reg.bloco}</span>
+                                    <div key={reg.id} className="p-5 border-b border-slate-50 flex items-center justify-between transition-colors hover:bg-slate-50">
+                                        <div className="pl-4 flex items-center gap-4">
+                                            <span className="text-xl font-black tracking-tight text-slate-800">{reg.bloco}</span>
+                                            <span className={`text-[9px] font-bold px-3 py-1 rounded-full uppercase tracking-widest ${reg.status === 'ligado' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-500'}`}>{reg.status}</span>
                                         </div>
                                         <div className="flex items-center gap-10 pr-4">
-                                            <p className="text-2xl font-black text-slate-900">
-                                                {reg.vazao.toLocaleString('pt-BR', {maximumFractionDigits:0})} <span className="text-[10px] text-slate-400 font-bold ml-1">L/h</span>
-                                            </p>
+                                            <div className="text-right">
+                                                <p className="text-2xl font-black text-slate-900">
+                                                    {reg.vazao.toLocaleString('pt-BR', {maximumFractionDigits:0})} <span className="text-[10px] font-bold ml-1 text-blue-500">L/h</span>
+                                                </p>
+                                                <p className="text-[10px] font-black text-black uppercase tracking-wider">Tempo: {reg.segundos}s</p>
+                                            </div>
                                             <button onClick={() => setRegistros(registros.filter(r => r.id !== reg.id))} className="text-slate-200 hover:text-red-500 transition-colors p-2">
                                                 <SvgIcon name="trash" />
                                             </button>
@@ -336,53 +403,47 @@
 
                     {/* TEMPLATE DE EXPORTAÇÃO */}
                     {showExport && (
-                        <div id="export-container" ref={exportRef} className="bg-slate-50">
-                            {/* Header Verde */}
-                            <div className="gradient-dark-green p-12 flex justify-between items-center text-white border-b-8 border-emerald-900">
+                        <div id="export-container" ref={exportRef}>
+                            <div className="gradient-dark-green p-12 flex justify-between items-center text-white">
                                 <div className="flex items-center gap-10">
                                     <img src={OASIS_LOGO_URL} className="h-24 logo-img" alt="Logo" crossOrigin="anonymous" />
-                                    <div className="h-20 w-[2px] bg-emerald-800/50"></div>
                                     <div>
                                         <h1 className="text-6xl font-black uppercase tracking-tighter leading-none">Fazenda Oásis</h1>
-                                        <p className="text-xl font-bold text-emerald-500 uppercase tracking-[0.4em] mt-2">Leitura Diária de vazão</p>
+                                        <p className="text-xl font-bold text-emerald-500 uppercase tracking-[0.4em] mt-2">Relatório Consolidado de vazão</p>
                                     </div>
                                 </div>
-                                <div className="bg-emerald-950/60 px-8 py-5 rounded-2xl border border-emerald-900 text-center">
-                                    <p className="text-[12px] font-black text-emerald-600 uppercase tracking-widest mb-1">Relatório Diário</p>
-                                    <p className="text-3xl font-black">{new Date().toLocaleDateString('pt-BR')}</p>
+                                <div className="bg-emerald-950/60 px-10 py-6 rounded-3xl border border-emerald-900/50 text-center">
+                                    <p className="text-[12px] font-black text-emerald-500 uppercase tracking-widest mb-1">Data</p>
+                                    <p className="text-4xl font-black tracking-tight">{new Date().toLocaleDateString('pt-BR')}</p>
                                 </div>
                             </div>
 
-                            <div className="p-10 space-y-10">
-                                {/* Destaque Principal */}
-                                <div className="premium-card gradient-main-green text-white">
-                                    <p className="card-label-top text-emerald-200">Vazão Total do Sistema</p>
-                                    <p className="export-num-xl">
+                            <div className="p-12 space-y-12">
+                                <div className="premium-card gradient-dark-green text-white h-[450px]">
+                                    <p className="text-emerald-500 font-black uppercase tracking-[0.5em] text-sm mb-12">Vazão Total do Sistema</p>
+                                    <p className="export-vazao-main">
                                         {stats.totalVazao.toLocaleString('pt-BR', {maximumFractionDigits:0})}
                                     </p>
-                                    <p className="card-label-bottom text-white/40">Litros por Hora (L/h)</p>
+                                    <p className="font-black uppercase tracking-[0.3em] text-xl mt-8 italic text-blue-symbol">Litros por Hora (L/h)</p>
                                 </div>
 
-                                {/* Cards de Detalhe */}
-                                <div className="grid grid-cols-3 gap-8">
-                                    <div className="premium-card bg-white text-slate-900 aspect-[1/0.95]">
+                                <div className="grid grid-cols-3 gap-10">
+                                    <div className="premium-card aspect-[1/0.9]">
                                         <p className="card-label-top">Vazão Média</p>
-                                        <p className="export-num-lg text-blue-600">
+                                        <p className="text-7xl font-black text-blue-600 tracking-tighter">
                                             {stats.mediaVazao.toLocaleString('pt-BR', {maximumFractionDigits:0})}
                                         </p>
-                                        <p className="card-label-bottom text-slate-400 italic">Média L/h por Poço</p>
+                                        <p className="text-[11px] font-black text-slate-300 uppercase tracking-widest mt-4">Média por Unidade</p>
                                     </div>
 
-                                    <div className="premium-card bg-white text-slate-900 aspect-[1/0.95]">
-                                        <p className="card-label-top">Poços Ativos</p>
-                                        <p className="export-num-lg text-emerald-600">{stats.ativos}</p>
-                                        <p className="card-label-bottom text-slate-400 italic">Bombas em Operação</p>
+                                    <div className="premium-card aspect-[1/0.9] bg-emerald-500 text-white border-0 shadow-lg shadow-emerald-100">
+                                        <p className="text-emerald-100 font-black uppercase tracking-widest text-[11px] mb-8">Poços Ativos</p>
+                                        <p className="text-8xl font-black tracking-tighter">{stats.ativos}</p>
+                                        <p className="text-emerald-100 font-black uppercase tracking-widest text-[11px] mt-8">Unidades em Operação</p>
                                     </div>
 
-                                    {/* Nível do Tanque com RÉGUA DEITADA E MARCAÇÕES */}
-                                    <div className="premium-card bg-white text-slate-900 aspect-[1/0.95]">
-                                        <p className="card-label-top">Nível atual do tanque</p>
-                                        
+                                    <div className="premium-card aspect-[1/0.9]">
+                                        <p className="card-label-top">Nível Reservatório 03</p>
                                         <div className="w-full px-4 flex flex-col items-center">
                                             <div className="horizontal-ruler-wrapper">
                                                 <div className="horizontal-ruler-track">
@@ -391,45 +452,44 @@
                                                         <div key={m} className="h-mark" style={{ left: `${(m/DIVISOR_NIVEL)*100}%` }}></div>
                                                     ))}
                                                 </div>
-                                                {/* Labels da régua */}
                                                 {MARKERS.map(m => (
-                                                    <span key={m} className="h-mark-label" style={{ left: `${(m/DIVISOR_NIVEL)*100}%` }}>
-                                                        {m}m
-                                                    </span>
+                                                    <span key={m} className="h-mark-label" style={{ left: `${(m/DIVISOR_NIVEL)*100}%` }}>{m}m</span>
                                                 ))}
                                             </div>
-
-                                            <div className="mt-2 flex items-baseline">
-                                                <p className="export-num-lg text-blue-900">{Math.round(stats.porcentagem)}</p>
-                                                <span className="text-3xl font-black text-blue-900 opacity-30 ml-1">%</span>
+                                            <div className="mt-8 flex items-baseline gap-2">
+                                                <p className="text-6xl font-black text-blue-900 tracking-tighter">{Math.round(stats.porcentagem)}</p>
+                                                <span className="text-4xl font-black text-blue-symbol">%</span>
                                             </div>
                                         </div>
-
-                                        <p className="card-label-bottom text-slate-400 italic">Reservatório 03</p>
                                     </div>
                                 </div>
 
-                                {/* Tabela */}
-                                <div className="bg-white rounded-[40px] border-4 border-slate-100 overflow-hidden shadow-xl">
-                                    <div className="gradient-dark-green py-6 text-center text-white">
-                                        <h2 className="text-lg font-black uppercase tracking-[0.5em]">Tabela de Monitoramento</h2>
+                                <div className="bg-white rounded-[48px] border-4 border-slate-50 overflow-hidden shadow-2xl">
+                                    <div className="bg-slate-50 py-8 text-center border-b border-slate-100">
+                                        <h2 className="text-xl font-black uppercase tracking-[0.6em] text-slate-400">Produção Detalhada por Poço</h2>
                                     </div>
-                                    <div className="divide-y-2 divide-slate-100">
+                                    <div className="divide-y divide-slate-100">
                                         {stats.ordenados.map((r, idx) => (
-                                            <div key={r.id} className={`flex items-center justify-between p-8 px-12 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
-                                                <div className="flex flex-col">
-                                                    <span className="text-sm font-black text-slate-300 uppercase tracking-widest">Unidade</span>
-                                                    <span className="text-4xl font-black text-slate-800 tracking-tighter">{r.bloco}</span>
+                                            <div key={r.id} className={`flex items-center justify-between p-12 px-16 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
+                                                <div className="flex items-center gap-12">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-xs font-black text-slate-300 uppercase tracking-widest mb-1">Unidade</span>
+                                                        <span className="text-5xl font-black tracking-tighter text-slate-900">{r.bloco}</span>
+                                                    </div>
+                                                    <div className={`px-5 py-2 rounded-xl font-black text-[12px] uppercase tracking-[0.2em] border-2 ${r.status === 'ligado' ? 'border-emerald-100 text-emerald-600 bg-emerald-50' : 'border-red-100 text-red-400 bg-red-50'}`}>
+                                                        {r.status}
+                                                    </div>
                                                 </div>
                                                 
                                                 <div className="text-right">
-                                                    <div className="text-xs font-black text-emerald-600 tracking-widest uppercase mb-1">Vazão Atual</div>
-                                                    <div className="flex items-baseline gap-3">
-                                                        <p className="export-row-vazao text-slate-900 leading-none">
+                                                    <div className="text-xs font-black text-emerald-500 tracking-[0.3em] uppercase mb-2">Vazão Registrada</div>
+                                                    <div className="flex items-baseline justify-end gap-3">
+                                                        <p className="export-vazao-row text-slate-900">
                                                             {r.vazao.toLocaleString('pt-BR', {maximumFractionDigits:0})}
                                                         </p>
-                                                        <span className="text-xl font-black text-slate-300">L/h</span>
+                                                        <span className="text-2xl font-black text-blue-symbol">L/h</span>
                                                     </div>
+                                                    <p className="export-seconds-text mt-3">Tempo: {r.segundos}s</p>
                                                 </div>
                                             </div>
                                         ))}
@@ -437,10 +497,13 @@
                                 </div>
                             </div>
 
-                            {/* Rodapé */}
-                            <div className="py-10 flex flex-col items-center bg-slate-100/30">
-                                <p className="text-lg font-black text-slate-400 uppercase tracking-[1.5em] mb-2">Fazenda Oásis</p>
-                                <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Monitoramento de Recursos Hídricos</p>
+                            <div className="py-16 flex flex-col items-center bg-slate-50 border-t border-slate-100">
+                                <div className="flex items-center gap-4 mb-4">
+                                    <div className="h-[2px] w-20 bg-slate-200"></div>
+                                    <p className="text-xl font-black text-slate-300 uppercase tracking-[1em]">Fazenda Oásis</p>
+                                    <div className="h-[2px] w-20 bg-slate-200"></div>
+                                </div>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tecnologia e Precisão no Campo</p>
                             </div>
                         </div>
                     )}
