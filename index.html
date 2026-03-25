@@ -14,155 +14,86 @@
         
         body { 
             font-family: 'Inter', sans-serif; 
-            background-color: #F1F5F9;
+            background-color: #F8FAFC;
             color: #0F172A;
         }
 
-        .logo-img { object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); }
-        
         #export-container {
             position: absolute;
             left: -9999px;
             top: 0;
             background: #FFFFFF;
-            width: 1200px;
+            width: 800px;
             display: block !important;
-        }
-
-        /* Réguas Internas */
-        .ruler-container {
-            height: 280px;
-            width: 45px;
-            background: #E2E8F0;
-            border-radius: 12px;
-            position: relative;
-            border: 2px solid #CBD5E1;
-        }
-
-        .ruler-fill {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: linear-gradient(180deg, #3B82F6 0%, #1D4ED8 100%);
-            transition: height 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 0 0 10px 10px;
-            z-index: 2;
-        }
-
-        /* RÉGUA HORIZONTAL (Exportação) */
-        .horizontal-ruler-wrapper {
-            width: 100%;
-            position: relative;
-            padding-bottom: 25px;
-            margin-top: 10px;
         }
 
         .horizontal-ruler-track {
             width: 100%;
-            height: 32px;
-            background: #E2E8F0;
-            border-radius: 10px;
+            height: 24px;
+            background: #F1F5F9;
+            border-radius: 4px;
             position: relative;
-            border: 2px solid #CBD5E1;
-            overflow: hidden;
+            border: 1px solid #E2E8F0;
+            overflow: visible;
         }
 
         .horizontal-fill {
             height: 100%;
-            background: linear-gradient(90deg, #1D4ED8 0%, #3B82F6 100%);
+            background: linear-gradient(90deg, #3B82F6 0%, #2563EB 100%);
+            transition: width 0.5s ease;
+            border-radius: 3px;
         }
 
         .h-mark {
             position: absolute;
             top: 0;
-            width: 2px;
+            width: 1px;
             height: 100%;
             background: rgba(0,0,0,0.1);
-            z-index: 5;
         }
 
         .h-mark-label {
             position: absolute;
-            top: 36px;
+            top: 28px;
             transform: translateX(-50%);
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 800;
-            color: #94A3B8;
-            white-space: nowrap;
+            color: #64748b;
         }
 
-        .premium-card {
-            background: white;
-            border-radius: 40px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 35px 25px;
-            position: relative;
-            border: 1px solid #F1F5F9;
+        .bg-dark-custom { background: #0A0F1C; }
+        .bg-green-custom { background: #059669; }
+        .bg-header-custom { background: #041E12; }
+        
+        .export-row {
+            border-bottom: 1px solid #F1F5F9;
+            padding: 16px 32px;
         }
-
-        .card-label-top {
-            font-size: 12px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-            margin-bottom: 15px;
-            color: #94A3B8;
+        .export-unit-name {
+            font-size: 20px;
+            font-weight: 900;
+            color: #1E293B;
+            letter-spacing: -0.5px;
         }
-
-        .gradient-dark-green { background: #041E12; }
-        .gradient-main-green { background: #064E3B; }
-
-        /* Botões de status */
-        .status-btn {
-            flex: 1;
-            padding: 14px;
-            border-radius: 16px;
-            font-weight: 800;
-            text-transform: uppercase;
+        .export-status-badge {
             font-size: 11px;
-            letter-spacing: 0.1em;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 2px solid transparent;
-            cursor: pointer;
+            font-weight: 800;
+            padding: 4px 12px;
+            border-radius: 8px;
+            text-transform: uppercase;
+        }
+        .vazao-value {
+            font-size: 28px;
+            font-weight: 900;
+            line-height: 1;
+        }
+        .export-header-title {
+            font-size: 42px;
+            line-height: 1;
         }
         
-        .status-btn-active-on { 
-            background: #10B981; 
-            color: white; 
-            border-color: #059669;
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-            transform: translateY(-1px);
-        }
-        .status-btn-active-off { 
-            background: #EF4444; 
-            color: white; 
-            border-color: #DC2626;
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-            transform: translateY(-1px);
-        }
-        
-        .status-btn-inactive { 
-            background: #F8FAFC; 
-            color: #94A3B8; 
-            border-color: #E2E8F0;
-        }
-
-        /* Export Text Styles */
-        .export-vazao-main { font-size: 100px; font-weight: 900; line-height: 0.9; letter-spacing: -0.04em; }
-        .export-vazao-row { font-size: 64px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; }
-        .export-seconds-text { font-size: 14px; font-weight: 800; color: #000000; letter-spacing: 0.05em; text-transform: uppercase; }
-        
-        .text-blue-symbol { color: #3B82F6; }
-        .text-emerald-symbol { color: #10B981; }
+        /* Cores nítidas para desligado */
+        .text-off-strong { color: #DC2626; opacity: 1 !important; }
     </style>
 </head>
 <body>
@@ -173,32 +104,40 @@
 
         const OASIS_LOGO_URL = "https://i.imgur.com/fx8tSao.png";
         const POCOS_LIST = Array.from({ length: 17 }, (_, i) => `POÇO ${String(i + 1).padStart(2, '0')}`);
-        const DIVISOR_NIVEL = 4.71; 
+        const MOTIVOS_LIST = ["TANQUE CHEIO", "MANUTENÇÃO", "ELÉTRICA", "AGUARDANDO"];
+        const MAX_NIVEL = 4.71; 
         const MARKERS = [0, 1, 2, 3, 4, 4.71];
 
-        const SvgIcon = ({ name, className = "w-5 h-5" }) => {
+        const SvgIcon = ({ name, className = "w-4 h-4" }) => {
             const icons = {
                 trash: <><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></>,
-                image: <><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></>
+                image: <><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></>,
+                droplet: <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />,
+                activity: <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />,
+                database: <><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></>
             };
             return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>{icons[name]}</svg>;
         };
 
-        const TankRuler = ({ percentage, height = "250px" }) => (
-            <div className="ruler-container" style={{ height }}>
-                <div className="ruler-fill" style={{ height: `${Math.min(percentage, 100)}%` }}>
-                    {percentage > 12 && <span className="text-[10px] font-black text-white">{Math.round(percentage)}%</span>}
+        const HorizontalRuler = ({ percentage, value, compact = false, exportMode = false }) => (
+            <div className="w-full">
+                <div className={`relative ${exportMode ? 'mb-10' : 'mb-12'}`}>
+                    <div className={exportMode ? 'w-full h-4 bg-slate-100 rounded-sm relative border border-slate-200 overflow-visible' : 'horizontal-ruler-track'}>
+                        <div className="horizontal-fill" style={{ width: `${Math.min(percentage, 100)}%` }}></div>
+                        {MARKERS.map(m => (
+                            <React.Fragment key={m}>
+                                <div className="h-mark" style={{ left: `${(m/MAX_NIVEL)*100}%` }}></div>
+                                <span className="h-mark-label" style={{ left: `${(m/MAX_NIVEL)*100}%` }}>{m}</span>
+                            </React.Fragment>
+                        ))}
+                    </div>
                 </div>
-                <div className="absolute inset-0 pointer-events-none">
-                    {MARKERS.map(m => (
-                        <React.Fragment key={m}>
-                            <div className="absolute right-[-6px] w-[6px] h-[2px] bg-slate-400" style={{ bottom: `${(m / DIVISOR_NIVEL) * 100}%` }}></div>
-                            <span className="absolute left-[52px] text-[10px] font-bold text-slate-400 whitespace-nowrap transform -translate-y-1/2" style={{ bottom: `${(m / DIVISOR_NIVEL) * 100}%` }}>
-                                {m}m
-                            </span>
-                        </React.Fragment>
-                    ))}
-                </div>
+                {!exportMode && (
+                    <div className="flex justify-center items-baseline gap-1 mt-2">
+                        <span className={`${compact ? 'text-3xl' : 'text-4xl'} font-black text-blue-600 tracking-tighter`}>{Math.round(percentage)}</span>
+                        <span className={`${compact ? 'text-xl' : 'text-xl'} font-black text-blue-400`}>%</span>
+                    </div>
+                )}
             </div>
         );
 
@@ -206,28 +145,33 @@
             const [registros, setRegistros] = useState([]);
             const [nivelTanque, setNivelTanque] = useState("3,20");
             const [isExporting, setIsExporting] = useState(false);
-            const [formData, setFormData] = useState({ bloco: 'POÇO 01', segundos: '3,41', status: 'ligado' });
+            const [formData, setFormData] = useState({ 
+                bloco: 'POÇO 01', 
+                segundos: '0,00', 
+                status: 'desligado',
+                motivo: 'TANQUE CHEIO'
+            });
             const [showExport, setShowExport] = useState(false);
             const exportRef = useRef(null);
 
             useEffect(() => {
-                const data = localStorage.getItem('oasis_vazao_v17');
-                const tank = localStorage.getItem('oasis_tank_v17');
+                const data = localStorage.getItem('oasis_vazao_v20');
+                const tank = localStorage.getItem('oasis_tank_v20');
                 if (data) setRegistros(JSON.parse(data));
                 if (tank) setNivelTanque(tank);
             }, []);
 
             const stats = useMemo(() => {
-                const totalVazao = registros.reduce((acc, curr) => acc + (Number(curr.vazao) || 0), 0);
-                const ativos = registros.filter(r => r.status === 'ligado').length;
-                const mediaVazao = registros.length > 0 ? totalVazao / registros.length : 0;
+                const poçosAtivos = registros.filter(r => r.status === 'ligado');
+                const totalVazao = poçosAtivos.reduce((acc, curr) => acc + (Number(curr.vazao) || 0), 0);
+                const vazaoMedia = poçosAtivos.length > 0 ? totalVazao / poçosAtivos.length : 0;
                 
+                const ativos = poçosAtivos.length;
                 const metros = parseFloat(nivelTanque.replace(",", ".")) || 0;
-                const porcentagem = (metros / DIVISOR_NIVEL) * 100;
+                const porcentagem = (metros / MAX_NIVEL) * 100;
 
                 return { 
-                    totalVazao, mediaVazao, ativos, 
-                    metros, porcentagem,
+                    totalVazao, vazaoMedia, ativos, metros, porcentagem,
                     ordenados: [...registros].sort((a, b) => a.bloco.localeCompare(b.bloco))
                 };
             }, [registros, nivelTanque]);
@@ -241,7 +185,7 @@
                 const filtrados = registros.filter(r => r.bloco !== formData.bloco);
                 const atualizados = [novo, ...filtrados];
                 setRegistros(atualizados);
-                localStorage.setItem('oasis_vazao_v17', JSON.stringify(atualizados));
+                localStorage.setItem('oasis_vazao_v20', JSON.stringify(atualizados));
             };
 
             const exportImage = async () => {
@@ -249,146 +193,150 @@
                 setShowExport(true);
                 setTimeout(async () => {
                     const canvas = await html2canvas(exportRef.current, { 
-                        scale: 2,
+                        scale: 2, 
                         useCORS: true,
-                        backgroundColor: '#FFFFFF'
+                        backgroundColor: "#FFFFFF"
                     });
                     const link = document.createElement('a');
                     link.download = `Relatorio_Oasis_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.jpg`;
-                    link.href = canvas.toDataURL('image/jpeg', 0.95);
+                    link.href = canvas.toDataURL('image/jpeg', 0.9);
                     link.click();
                     setShowExport(false);
                     setIsExporting(false);
-                }, 1000);
+                }, 800);
             };
 
             return (
-                <div className="min-h-screen pb-10">
-                    <header className="bg-[#041E12] text-white p-5 sticky top-0 z-40 shadow-xl">
-                        <div className="max-w-6xl mx-auto flex justify-between items-center">
-                            <div className="flex items-center gap-4">
-                                <img src={OASIS_LOGO_URL} className="h-10 logo-img" alt="Logo" />
-                                <div>
-                                    <h1 className="text-lg font-black uppercase tracking-tight leading-none">Fazenda Oásis</h1>
-                                    <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest mt-1">Gestão Hídrica Central</p>
-                                </div>
+                <div className="min-h-screen pb-20">
+                    <header className="bg-header-custom text-white p-5 sticky top-0 z-40 shadow-lg">
+                        <div className="max-w-5xl mx-auto flex justify-between items-center">
+                            <div className="flex items-center gap-3">
+                                <img src={OASIS_LOGO_URL} className="h-8" alt="Logo" />
+                                <h1 className="text-lg font-black uppercase">Fazenda Oásis</h1>
                             </div>
-                            <button onClick={exportImage} className="bg-emerald-600 hover:bg-emerald-500 px-6 py-2 rounded-full font-black text-[11px] uppercase flex items-center gap-2 transition-all active:scale-95">
-                                <SvgIcon name="image" /> {isExporting ? "Processando..." : "Exportar Relatório"}
+                            <button onClick={exportImage} className="bg-emerald-600 hover:bg-emerald-500 transition-colors px-6 py-2.5 rounded-full font-black text-[11px] uppercase flex items-center gap-2 shadow-md">
+                                <SvgIcon name="image" /> {isExporting ? "Gerando..." : "Exportar Relatório"}
                             </button>
                         </div>
                     </header>
 
-                    <main className="max-w-6xl mx-auto p-6 grid md:grid-cols-[380px_1fr] gap-8 mt-4">
+                    <main className="max-w-5xl mx-auto p-4 grid md:grid-cols-[340px_1fr] gap-6 mt-4">
+                        {/* FORMULÁRIO E REGISTRO */}
                         <div className="space-y-6">
-                            {/* Nível Tanque */}
-                            <div className="bg-white p-6 rounded-[32px] shadow-sm border border-slate-200">
-                                <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-6 text-center">Nível Tanque 03</h3>
-                                <div className="flex gap-10 items-center pl-2">
-                                    <TankRuler percentage={stats.porcentagem} />
-                                    <div className="flex-1 text-center">
-                                        <input 
-                                            type="text" 
-                                            value={nivelTanque} 
-                                            onChange={(e) => {
-                                                let val = e.target.value.replace(/\D/g, "");
-                                                let formatted = (parseFloat(val || 0) / 100).toFixed(2).replace(".", ",");
-                                                setNivelTanque(formatted);
-                                                localStorage.setItem('oasis_tank_v17', formatted);
-                                            }}
-                                            className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl text-center font-black text-4xl text-blue-900 focus:border-blue-500 outline-none"
-                                        />
-                                        <div className="mt-4 p-4 bg-blue-900 rounded-2xl text-white">
-                                            <p className="text-4xl font-black tracking-tighter">{Math.round(stats.porcentagem)}%</p>
-                                        </div>
-                                    </div>
+                            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                                <div className="flex justify-between items-center mb-4">
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                        <SvgIcon name="droplet" className="w-3 h-3 text-blue-500" /> Nível Tanque
+                                    </p>
+                                    <span className="text-[11px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                                        {Math.round(stats.porcentagem)}%
+                                    </span>
                                 </div>
+                                <input type="text" value={nivelTanque} 
+                                    onChange={(e) => {
+                                        let val = e.target.value.replace(/\D/g, "");
+                                        let formatted = (parseFloat(val || 0) / 100).toFixed(2).replace(".", ",");
+                                        setNivelTanque(formatted);
+                                        localStorage.setItem('oasis_tank_v20', formatted);
+                                    }}
+                                    className="w-full p-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-center font-black text-2xl text-blue-900 outline-none focus:border-blue-400 transition-all mb-4"
+                                />
+                                <div className="mt-4"><HorizontalRuler percentage={stats.porcentagem} value={nivelTanque} compact /></div>
                             </div>
 
-                            {/* Registro de Vazão */}
-                            <div className="bg-white p-6 rounded-[32px] shadow-sm border border-slate-200">
-                                <form onSubmit={handleSave} className="space-y-6">
-                                    <div className="space-y-2">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Selecione a Unidade</p>
-                                        <select value={formData.bloco} onChange={e => setFormData({...formData, bloco: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-black text-center focus:ring-2 focus:ring-emerald-500 outline-none">
+                            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                                <form onSubmit={handleSave} className="space-y-4">
+                                    <div>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase mb-2">Unidade</p>
+                                        <select value={formData.bloco} onChange={e => {
+                                            const poçoExistente = registros.find(r => r.bloco === e.target.value);
+                                            if(poçoExistente) setFormData(poçoExistente);
+                                            else setFormData({...formData, bloco: e.target.value});
+                                        }} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold outline-none">
                                             {POCOS_LIST.map(p => <option key={p} value={p}>{p}</option>)}
                                         </select>
                                     </div>
-
-                                    <div className="space-y-2">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Estado da Operação</p>
-                                        <div className="flex gap-3">
-                                            <button 
-                                                type="button" 
-                                                onClick={() => setFormData({...formData, status: 'ligado'})} 
-                                                className={`status-btn ${formData.status === 'ligado' ? 'status-btn-active-on' : 'status-btn-inactive'}`}
-                                            >
-                                                Ligado
-                                            </button>
-                                            <button 
-                                                type="button" 
-                                                onClick={() => setFormData({...formData, status: 'desligado'})} 
-                                                className={`status-btn ${formData.status === 'desligado' ? 'status-btn-active-off' : 'status-btn-inactive'}`}
-                                            >
-                                                Desligado
-                                            </button>
-                                        </div>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <button type="button" onClick={() => setFormData({...formData, status: 'ligado'})} className={`py-3 rounded-xl font-black text-[9px] uppercase border-2 transition-all ${formData.status === 'ligado' ? 'bg-emerald-500 text-white border-emerald-600 shadow-md' : 'bg-slate-50 text-slate-400'}`}>Ligado</button>
+                                        <button type="button" onClick={() => setFormData({...formData, status: 'desligado'})} className={`py-3 rounded-xl font-black text-[9px] uppercase border-2 transition-all ${formData.status === 'desligado' ? 'bg-red-600 text-white border-red-700 shadow-md' : 'bg-slate-50 text-slate-400'}`}>Desligado</button>
                                     </div>
-
-                                    <div className="space-y-2 text-center">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cronometragem (Segundos p/ 15L)</p>
-                                        <input 
-                                            type="text" 
-                                            value={formData.segundos}
+                                    {formData.status === 'desligado' && (
+                                        <div>
+                                            <p className="text-[9px] font-black text-slate-400 uppercase mb-2">Motivo</p>
+                                            <select value={formData.motivo} onChange={e => setFormData({...formData, motivo: e.target.value})} className="w-full p-2.5 bg-orange-50 border border-orange-100 rounded-xl font-bold text-orange-700 text-xs">
+                                                {MOTIVOS_LIST.map(m => <option key={m} value={m}>{m}</option>)}
+                                            </select>
+                                        </div>
+                                    )}
+                                    <div>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase mb-2">Segundos (15L)</p>
+                                        <input type="text" value={formData.segundos}
                                             onChange={e => {
                                                 let val = e.target.value.replace(/\D/g, "");
                                                 let formatted = (parseFloat(val || 0) / 100).toFixed(2).replace(".", ",");
                                                 setFormData({...formData, segundos: formatted});
                                             }}
-                                            className="w-full p-6 bg-slate-50 border-2 border-slate-200 rounded-2xl text-center font-black text-4xl text-emerald-900 outline-none focus:border-emerald-500"
+                                            className="w-full p-3 bg-emerald-50 border-2 border-emerald-100 rounded-xl text-center font-black text-xl text-emerald-900 outline-none"
                                         />
                                     </div>
-
-                                    <button className="w-full bg-[#041E12] text-white py-5 rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg active:scale-95 hover:bg-[#062c1b] transition-all">
-                                        Salvar Produção
-                                    </button>
+                                    <button className="w-full bg-header-custom text-white py-4 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-lg hover:brightness-125 transition-all">Salvar Registro</button>
                                 </form>
                             </div>
                         </div>
 
+                        {/* HISTÓRICO COM CORES NOS VALORES */}
                         <div className="space-y-6">
-                            <div className="grid grid-cols-3 gap-6">
-                                <div className="bg-[#041E12] p-6 rounded-[30px] text-white text-center">
-                                    <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest mb-1">Vazão Consolidada</p>
-                                    <p className="text-4xl font-black leading-none">{stats.totalVazao.toLocaleString('pt-BR', {maximumFractionDigits:0})}</p>
+                            <div className="grid grid-cols-4 gap-4">
+                                <div className="bg-dark-custom p-4 rounded-2xl text-white text-center shadow-md">
+                                    <p className="text-[8px] font-black text-emerald-500 uppercase tracking-widest mb-1">Vazão Total</p>
+                                    <p className="text-xl font-black text-emerald-400">{stats.totalVazao.toLocaleString('pt-BR', {maximumFractionDigits:0})}</p>
+                                    <p className="text-[7px] font-bold text-slate-500 mt-1 uppercase">L/H</p>
                                 </div>
-                                <div className="bg-white p-6 rounded-[30px] border border-slate-200 text-center">
-                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Vazão Média</p>
-                                    <p className="text-4xl font-black text-blue-600 leading-none">{stats.mediaVazao.toLocaleString('pt-BR', {maximumFractionDigits:0})}</p>
+                                <div className="bg-white p-4 rounded-2xl border border-slate-200 text-center shadow-sm">
+                                    <p className="text-[8px] font-black text-blue-400 uppercase tracking-widest mb-1">Média</p>
+                                    <p className="text-xl font-black text-blue-600">{stats.vazaoMedia.toLocaleString('pt-BR', {maximumFractionDigits:0})}</p>
+                                    <p className="text-[7px] font-bold text-slate-400 mt-1 uppercase">L/H</p>
                                 </div>
-                                <div className="bg-emerald-500 p-6 rounded-[30px] text-white text-center">
-                                    <p className="text-[9px] font-black text-emerald-100 uppercase tracking-widest mb-1">Poços Ativos</p>
-                                    <p className="text-4xl font-black leading-none">{stats.ativos}</p>
+                                <div className="bg-white p-4 rounded-2xl border border-slate-200 text-center shadow-sm">
+                                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Nível</p>
+                                    <p className="text-xl font-black text-slate-900">{Math.round(stats.porcentagem)}%</p>
+                                    <p className="text-[7px] font-bold text-slate-400 mt-1 uppercase">{nivelTanque}m</p>
+                                </div>
+                                <div className="bg-green-custom p-4 rounded-2xl text-white text-center shadow-md">
+                                    <p className="text-[8px] font-black text-emerald-100 uppercase tracking-widest mb-1">Ativos</p>
+                                    <p className="text-xl font-black">{stats.ativos}</p>
+                                    <p className="text-[7px] font-bold text-emerald-200 mt-1 uppercase">Unid</p>
                                 </div>
                             </div>
 
-                            <div className="bg-white rounded-[32px] border border-slate-200 overflow-hidden shadow-sm">
+                            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                                <div className="p-3 bg-slate-50 border-b border-slate-100 text-[9px] font-black text-slate-400 uppercase tracking-widest">Monitoramento em Tempo Real</div>
                                 {stats.ordenados.map(reg => (
-                                    <div key={reg.id} className="p-5 border-b border-slate-50 flex items-center justify-between transition-colors hover:bg-slate-50">
-                                        <div className="pl-4 flex items-center gap-4">
-                                            <span className="text-xl font-black tracking-tight text-slate-800">{reg.bloco}</span>
-                                            <span className={`text-[9px] font-bold px-3 py-1 rounded-full uppercase tracking-widest ${reg.status === 'ligado' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-500'}`}>{reg.status}</span>
-                                        </div>
-                                        <div className="flex items-center gap-10 pr-4">
-                                            <div className="text-right">
-                                                <p className="text-2xl font-black text-slate-900">
-                                                    {reg.vazao.toLocaleString('pt-BR', {maximumFractionDigits:0})} <span className="text-[10px] font-bold ml-1 text-blue-500">L/h</span>
-                                                </p>
-                                                <p className="text-[10px] font-black text-black uppercase tracking-wider">Tempo: {reg.segundos}s</p>
+                                    <div key={reg.id} className="p-4 border-b border-slate-50 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
+                                        <div className="flex items-center gap-4">
+                                            <div className={`p-2 rounded-lg ${reg.status === 'ligado' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                                                <SvgIcon name={reg.status === 'ligado' ? "activity" : "database"} className="w-4 h-4" />
                                             </div>
-                                            <button onClick={() => setRegistros(registros.filter(r => r.id !== reg.id))} className="text-slate-200 hover:text-red-500 transition-colors p-2">
-                                                <SvgIcon name="trash" />
-                                            </button>
+                                            <div>
+                                                <p className="text-sm font-black text-slate-900">{reg.bloco}</p>
+                                                <div className="flex gap-2 mt-0.5">
+                                                    <span className={`text-[7px] font-bold px-1.5 py-0.5 rounded uppercase ${reg.status === 'ligado' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-600 text-white'}`}>{reg.status}</span>
+                                                    {reg.status === 'desligado' && <span className="text-[7px] font-bold px-1.5 py-0.5 rounded uppercase bg-orange-100 text-orange-700">{reg.motivo}</span>}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                            <div className="text-right">
+                                                <p className={`text-lg font-black ${reg.status === 'ligado' ? 'text-emerald-600' : 'text-off-strong'}`}>
+                                                    {reg.vazao.toLocaleString('pt-BR', {maximumFractionDigits:0})} <span className="text-[9px]">L/h</span>
+                                                </p>
+                                                <p className="text-[8px] font-bold text-slate-400 uppercase">{reg.segundos}s</p>
+                                            </div>
+                                            <button onClick={() => {
+                                                const novos = registros.filter(r => r.id !== reg.id);
+                                                setRegistros(novos);
+                                                localStorage.setItem('oasis_vazao_v20', JSON.stringify(novos));
+                                            }} className="text-slate-200 hover:text-red-500 ml-2"><SvgIcon name="trash" className="w-3.5 h-3.5" /></button>
                                         </div>
                                     </div>
                                 ))}
@@ -396,110 +344,90 @@
                         </div>
                     </main>
 
-                    {/* TEMPLATE DE EXPORTAÇÃO */}
+                    {/* ÁREA DE EXPORTAÇÃO */}
                     {showExport && (
-                        <div id="export-container" ref={exportRef}>
-                            <div className="gradient-dark-green p-12 flex justify-between items-center text-white">
-                                <div className="flex items-center gap-10">
-                                    <img src={OASIS_LOGO_URL} className="h-24 logo-img" alt="Logo" crossOrigin="anonymous" />
+                        <div id="export-container" ref={exportRef} className="bg-white">
+                            <div className="bg-header-custom p-8 pt-12 flex justify-between items-center text-white border-b-[8px] border-emerald-900">
+                                <div className="flex items-center gap-6">
+                                    <img src={OASIS_LOGO_URL} className="h-16" crossOrigin="anonymous" />
                                     <div>
-                                        <h1 className="text-6xl font-black uppercase tracking-tighter leading-none">Fazenda Oásis</h1>
-                                        <p className="text-xl font-bold text-emerald-500 uppercase tracking-[0.4em] mt-2">Relatório Consolidado de vazão</p>
+                                        <h1 className="export-header-title font-black uppercase tracking-tight mb-0.5">Fazenda Oásis</h1>
+                                        <p className="text-xl font-bold text-emerald-400 uppercase tracking-[0.3em]">Registro de Vazão</p>
                                     </div>
                                 </div>
-                                <div className="bg-emerald-950/60 px-10 py-6 rounded-3xl border border-emerald-900/50 text-center">
-                                    <p className="text-[12px] font-black text-emerald-500 uppercase tracking-widest mb-1">Data</p>
-                                    <p className="text-4xl font-black tracking-tight">{new Date().toLocaleDateString('pt-BR')}</p>
+                                <div className="text-right">
+                                    <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Relatório Gerado em</p>
+                                    <p className="text-3xl font-black">{new Date().toLocaleDateString('pt-BR')}</p>
                                 </div>
                             </div>
 
-                            <div className="p-12 space-y-12">
-                                <div className="premium-card gradient-dark-green text-white h-[380px]">
-                                    <p className="text-emerald-500 font-black uppercase tracking-[0.5em] text-sm mb-8">Vazão Total do Sistema</p>
-                                    <p className="export-vazao-main">
-                                        {stats.totalVazao.toLocaleString('pt-BR', {maximumFractionDigits:0})}
-                                    </p>
-                                    <p className="font-black uppercase tracking-[0.3em] text-xl mt-6 italic text-emerald-symbol">Litros por Hora (L/h)</p>
-                                </div>
-
-                                <div className="grid grid-cols-3 gap-10">
-                                    <div className="premium-card aspect-[1/0.9]">
-                                        <p className="card-label-top">Vazão Média</p>
-                                        <p className="text-7xl font-black text-blue-600 tracking-tighter">
-                                            {stats.mediaVazao.toLocaleString('pt-BR', {maximumFractionDigits:0})}
-                                        </p>
-                                        <p className="text-[11px] font-black text-slate-300 uppercase tracking-widest mt-4">Média por Unidade</p>
+                            <div className="p-8">
+                                <div className="grid grid-cols-4 gap-4 mb-10">
+                                    <div className="bg-dark-custom p-5 rounded-[24px] text-white text-center border-b-4 border-emerald-950">
+                                        <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Vazão Total</p>
+                                        <p className="text-4xl font-black text-emerald-400">{stats.totalVazao.toLocaleString('pt-BR', {maximumFractionDigits:0})}</p>
+                                        <p className="text-[9px] font-bold text-emerald-800 mt-1 uppercase">Litros / Hora</p>
                                     </div>
-
-                                    {/* CARD DE POÇOS ATIVOS ATUALIZADO (BRANCO COM TEXTO VERDE) */}
-                                    <div className="premium-card aspect-[1/0.9] bg-white text-emerald-600 border border-slate-100 shadow-lg shadow-slate-100">
-                                        <p className="text-slate-400 font-black uppercase tracking-widest text-[11px] mb-8">Poços Ativos</p>
-                                        <p className="text-8xl font-black tracking-tighter">{stats.ativos}</p>
-                                        <p className="text-emerald-500 font-black uppercase tracking-widest text-[11px] mt-8">Unidades em Operação</p>
+                                    <div className="bg-blue-50 p-5 rounded-[24px] border border-blue-100 text-center">
+                                        <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Vazão Média</p>
+                                        <p className="text-4xl font-black text-blue-600">{stats.vazaoMedia.toLocaleString('pt-BR', {maximumFractionDigits:0})}</p>
+                                        <p className="text-[9px] font-bold text-blue-200 mt-1 uppercase">L/H por Poço</p>
                                     </div>
-
-                                    <div className="premium-card aspect-[1/0.9]">
-                                        <p className="card-label-top">Nível Reservatório 03</p>
-                                        <div className="w-full px-4 flex flex-col items-center">
-                                            <div className="horizontal-ruler-wrapper">
-                                                <div className="horizontal-ruler-track">
-                                                    <div className="horizontal-fill" style={{ width: `${Math.min(stats.porcentagem, 100)}%` }}></div>
-                                                    {MARKERS.map(m => (
-                                                        <div key={m} className="h-mark" style={{ left: `${(m/DIVISOR_NIVEL)*100}%` }}></div>
-                                                    ))}
-                                                </div>
-                                                {MARKERS.map(m => (
-                                                    <span key={m} className="h-mark-label" style={{ left: `${(m/DIVISOR_NIVEL)*100}%` }}>{m}m</span>
-                                                ))}
-                                            </div>
-                                            <div className="mt-8 flex items-baseline gap-2">
-                                                <p className="text-6xl font-black text-blue-900 tracking-tighter">{Math.round(stats.porcentagem)}</p>
-                                                <span className="text-4xl font-black text-blue-symbol">%</span>
-                                            </div>
+                                    <div className="bg-white p-5 px-6 rounded-[24px] border border-slate-100 text-center flex flex-col justify-center">
+                                        <div className="flex justify-between items-center mb-1">
+                                            <p className="text-[10px] font-black text-slate-400 uppercase">Tanque ({nivelTanque}m)</p>
+                                            <span className="text-[10px] font-black text-blue-600">{Math.round(stats.porcentagem)}%</span>
                                         </div>
+                                        <HorizontalRuler percentage={stats.porcentagem} value={nivelTanque} exportMode />
+                                    </div>
+                                    <div className="bg-green-custom p-5 rounded-[24px] text-white text-center border-b-4 border-emerald-800">
+                                        <p className="text-[10px] font-black text-emerald-100 uppercase tracking-widest mb-1">Poços Ativos</p>
+                                        <p className="text-5xl font-black leading-none">{stats.ativos}</p>
+                                        <p className="text-[9px] font-bold text-emerald-900 mt-2 uppercase">Unidades</p>
                                     </div>
                                 </div>
 
-                                <div className="bg-white rounded-[48px] border-4 border-slate-50 overflow-hidden shadow-2xl">
-                                    <div className="bg-slate-50 py-8 text-center border-b border-slate-100">
-                                        <h2 className="text-xl font-black uppercase tracking-[0.6em] text-slate-400">Produção Detalhada por Poço</h2>
+                                <div className="bg-white rounded-[32px] border border-slate-100 overflow-hidden shadow-sm mb-8">
+                                    <div className="bg-slate-50 py-4 text-center border-b border-slate-100">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">Detalhamento Técnico das Unidades</p>
                                     </div>
-                                    <div className="divide-y divide-slate-100">
-                                        {stats.ordenados.map((r, idx) => (
-                                            <div key={r.id} className={`flex items-center justify-between p-12 px-16 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
-                                                <div className="flex items-center gap-12">
-                                                    <div className="flex flex-col">
-                                                        <span className="text-xs font-black text-slate-300 uppercase tracking-widest mb-1">Unidade</span>
-                                                        <span className="text-5xl font-black tracking-tighter text-slate-900">{r.bloco}</span>
-                                                    </div>
-                                                    <div className={`px-5 py-2 rounded-xl font-black text-[12px] uppercase tracking-[0.2em] border-2 ${r.status === 'ligado' ? 'border-emerald-100 text-emerald-600 bg-emerald-50' : 'border-red-100 text-red-400 bg-red-50'}`}>
+                                    <div className="divide-y divide-slate-50">
+                                        {stats.ordenados.map((r) => (
+                                            <div key={r.id} className="export-row flex items-center justify-between">
+                                                <div className="flex flex-col w-1/4">
+                                                    <span className="export-unit-name">{r.bloco}</span>
+                                                    <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Unid. Bombeamento</span>
+                                                </div>
+
+                                                <div className="flex items-center justify-center gap-4 w-1/3">
+                                                    <div className={`export-status-badge ${r.status === 'ligado' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-600 text-white'}`}>
                                                         {r.status}
                                                     </div>
+                                                    {r.status === 'desligado' && (
+                                                        <div className="bg-orange-50 text-orange-700 px-3 py-1.5 rounded-lg font-black text-[9px] uppercase border border-orange-100">
+                                                            {r.motivo}
+                                                        </div>
+                                                    )}
                                                 </div>
-                                                
-                                                <div className="text-right">
-                                                    <div className="text-xs font-black text-emerald-500 tracking-[0.3em] uppercase mb-2">Vazão Registrada</div>
-                                                    <div className="flex items-baseline justify-end gap-3">
-                                                        <p className="export-vazao-row text-slate-900">
+
+                                                <div className="text-right w-1/3">
+                                                    <div className="flex items-baseline justify-end gap-2">
+                                                        <span className={`vazao-value ${r.status === 'ligado' ? 'text-emerald-600' : 'text-off-strong'}`}>
                                                             {r.vazao.toLocaleString('pt-BR', {maximumFractionDigits:0})}
-                                                        </p>
-                                                        <span className="text-2xl font-black text-blue-symbol">L/h</span>
+                                                        </span>
+                                                        <span className={`text-lg font-black ${r.status === 'ligado' ? 'text-emerald-500' : 'text-slate-200'}`}>L/h</span>
                                                     </div>
-                                                    <p className="export-seconds-text mt-3">Tempo: {r.segundos}s</p>
+                                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Aferição: {r.segundos}s</p>
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
                                 </div>
-                            </div>
 
-                            <div className="py-16 flex flex-col items-center bg-slate-50 border-t border-slate-100">
-                                <div className="flex items-center gap-4 mb-4">
-                                    <div className="h-[2px] w-20 bg-slate-200"></div>
-                                    <p className="text-xl font-black text-slate-300 uppercase tracking-[1em]">Fazenda Oásis</p>
-                                    <div className="h-[2px] w-20 bg-slate-200"></div>
+                                <div className="py-10 flex flex-col items-center bg-slate-50 rounded-[32px] border border-slate-100">
+                                    <p className="text-xl font-black text-slate-900 uppercase tracking-[1em] opacity-10 mb-2">OÁSIS</p>
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Sistemas de Gestão de Precisão Hídrica</p>
                                 </div>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tecnologia e Precisão no Campo</p>
                             </div>
                         </div>
                     )}
