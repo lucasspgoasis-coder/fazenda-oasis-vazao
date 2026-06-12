@@ -160,6 +160,17 @@
         const MAX_NIVEL = 4.71; 
         const MARKERS = [0, 1, 2, 3, 4, 4.71];
 
+        // Função auxiliar para calcular os dias parados com base na data do registro
+        const calcularDiasParado = (dataParada, timestampRegistro) => {
+            if (!dataParada) return 0;
+            const inicio = new Date(dataParada + 'T00:00:00');
+            const fim = new Date(timestampRegistro);
+            inicio.setHours(0,0,0,0);
+            fim.setHours(0,0,0,0);
+            const diff = Math.round((fim - inicio) / (1000 * 60 * 60 * 24));
+            return diff >= 0 ? diff : 0;
+        };
+
         const SvgIcon = ({ name, className = "w-4 h-4" }) => {
             const icons = {
                 trash: <><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></>,
@@ -202,7 +213,8 @@
                 bloco: 'POÇO 01', 
                 segundos: '0,00', 
                 status: 'desligado',
-                motivo: 'TANQUE CHEIO'
+                motivo: 'TANQUE CHEIO',
+                dataParada: new Date().toISOString().split('T')[0] // Data inicial de hoje
             });
             const [showExport, setShowExport] = useState(false);
             const exportRef = useRef(null);
@@ -215,7 +227,6 @@
             }, []);
 
             const stats = useMemo(() => {
-                // Agora calculamos vazão para TODOS os registros, independente do status
                 const totalVazao = registros.reduce((acc, curr) => acc + (Number(curr.vazao) || 0), 0);
                 const vazaoMedia = registros.length > 0 ? totalVazao / registros.length : 0;
                 
@@ -233,7 +244,6 @@
             const handleSave = (e) => {
                 e.preventDefault();
                 const segs = parseFloat(formData.segundos.replace(",", ".")) || 0;
-                // Vazão é calculada sempre que houver segundos informados
                 const vazaoCalculada = segs > 0 ? (15 / segs) * 3600 : 0;
                 
                 const agora = new Date();
@@ -265,17 +275,6 @@
 
                     const sourceNode = exportRef.current;
                     if (!sourceNode) throw new Error("Área de exportação não disponível.");
-
-                    const sourceImages = Array.from(sourceNode.querySelectorAll("img"));
-                    await Promise.all(
-                        sourceImages.map((img) => {
-                            if (img.complete) return Promise.resolve();
-                            return new Promise((resolve) => {
-                                img.onload = resolve;
-                                img.onerror = resolve;
-                            });
-                        })
-                    );
 
                     const exportWrapper = document.createElement("div");
                     let dataUrl = "";
@@ -396,18 +395,36 @@
                                             {POCOS_LIST.map(p => <option key={p} value={p}>{p}</option>)}
                                         </select>
                                     </div>
+                                    
                                     <div className="grid grid-cols-2 gap-2">
-                                        <button type="button" onClick={() => setFormData({...formData, status: 'ligado'})} className={`py-3 rounded-xl font-black text-[9px] uppercase border-2 transition-all ${formData.status === 'ligado' ? 'bg-emerald-500 text-white border-emerald-600 shadow-md' : 'bg-slate-50 text-slate-400'}`}>Ligado</button>
-                                        <button type="button" onClick={() => setFormData({...formData, status: 'desligado'})} className={`py-3 rounded-xl font-black text-[9px] uppercase border-2 transition-all ${formData.status === 'desligado' ? 'bg-red-600 text-white border-red-700 shadow-md' : 'bg-slate-50 text-slate-400'}`}>Desligado</button>
+                                        <button type="button" onClick={() => setFormData({...formData, status: 'ligado'})} className={`py-3 rounded-xl font-black text-[9px] uppercase border-2 transition-all ${formData.status === 'ligado' ? 'bg-emerald-500 text-white border-emerald-600 shadow-md' : 'bg-slate-50 text-slate-400 border-slate-200'}`}>Ligado</button>
+                                        <button type="button" onClick={() => setFormData({...formData, status: 'desligado'})} className={`py-3 rounded-xl font-black text-[9px] uppercase border-2 transition-all ${formData.status === 'desligado' ? 'bg-orange-500 text-white border-orange-600 shadow-md' : 'bg-slate-50 text-slate-400 border-slate-200'}`}>Desligado</button>
                                     </div>
+
                                     {formData.status === 'desligado' && (
-                                        <div>
-                                            <p className="text-[9px] font-black text-slate-400 uppercase mb-2">Motivo</p>
-                                            <select value={formData.motivo} onChange={e => setFormData({...formData, motivo: e.target.value})} className="w-full p-2.5 bg-orange-50 border border-orange-100 rounded-xl font-bold text-orange-700 text-xs">
-                                                {MOTIVOS_LIST.map(m => <option key={m} value={m}>{m}</option>)}
-                                            </select>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div>
+                                                <p className="text-[9px] font-black text-slate-400 uppercase mb-2">Motivo</p>
+                                                <select 
+                                                    value={formData.motivo} 
+                                                    onChange={e => setFormData({...formData, motivo: e.target.value})} 
+                                                    className={`w-full p-2.5 border rounded-xl font-bold text-[10px] outline-none ${formData.motivo === 'MANUTENÇÃO' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-orange-50 border-orange-100 text-orange-700'}`}
+                                                >
+                                                    {MOTIVOS_LIST.map(m => <option key={m} value={m}>{m}</option>)}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <p className="text-[9px] font-black text-slate-400 uppercase mb-2">Data da Parada</p>
+                                                <input 
+                                                    type="date" 
+                                                    value={formData.dataParada}
+                                                    onChange={e => setFormData({...formData, dataParada: e.target.value})}
+                                                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 text-[10px] outline-none"
+                                                />
+                                            </div>
                                         </div>
                                     )}
+
                                     <div>
                                         <p className="text-[9px] font-black text-slate-400 uppercase mb-2">Segundos (15L)</p>
                                         <input type="text" value={formData.segundos}
@@ -416,7 +433,7 @@
                                                 let formatted = (parseFloat(val || 0) / 100).toFixed(2).replace(".", ",");
                                                 setFormData({...formData, segundos: formatted});
                                             }}
-                                            className={`w-full p-3 border-2 rounded-xl text-center font-black text-xl outline-none transition-all ${formData.status === 'desligado' ? 'bg-red-50 border-red-100 text-red-900' : 'bg-emerald-50 border-emerald-100 text-emerald-900'}`}
+                                            className={`w-full p-3 border-2 rounded-xl text-center font-black text-xl outline-none transition-all ${formData.status === 'desligado' ? 'bg-orange-50 border-orange-100 text-orange-900' : 'bg-emerald-50 border-emerald-100 text-emerald-900'}`}
                                         />
                                     </div>
                                     <button className="w-full text-white py-4 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-lg hover:brightness-110 transition-all" style={{ background: 'linear-gradient(135deg, #073D2B 0%, #0C5C40 100%)' }}>Salvar Registro</button>
@@ -453,7 +470,7 @@
                                 {stats.ordenados.map(reg => (
                                     <div key={reg.id} className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/80 transition-colors">
                                         <div className="flex items-center gap-4">
-                                            <div className={`p-2 rounded-lg ${reg.status === 'ligado' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                                            <div className={`p-2 rounded-lg ${reg.status === 'ligado' ? 'bg-emerald-50 text-emerald-600' : 'bg-orange-50 text-orange-600'}`}>
                                                 <SvgIcon name={reg.status === 'ligado' ? "activity" : "database"} className="w-4 h-4" />
                                             </div>
                                             <div>
@@ -463,15 +480,25 @@
                                                         <SvgIcon name="clock" className="w-2.5 h-2.5" /> {reg.hora || '--:--'}
                                                     </span>
                                                 </div>
-                                                <div className="flex gap-2 mt-0.5">
-                                                    <span className={`text-[7px] font-bold px-1.5 py-0.5 rounded uppercase ${reg.status === 'ligado' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-600 text-white'}`}>{reg.status}</span>
-                                                    {reg.status === 'desligado' && <span className="text-[7px] font-bold px-1.5 py-0.5 rounded uppercase bg-orange-100 text-orange-700">{reg.motivo}</span>}
+                                                <div className="flex gap-2 mt-0.5 items-center">
+                                                    <span className={`text-[7px] font-bold px-1.5 py-0.5 rounded uppercase ${reg.status === 'ligado' ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-500 text-white'}`}>{reg.status}</span>
+                                                    
+                                                    {reg.status === 'desligado' && (
+                                                        <>
+                                                            <span className={`text-[7px] font-bold px-1.5 py-0.5 rounded uppercase ${reg.motivo === 'MANUTENÇÃO' ? 'bg-red-600 text-white' : 'bg-orange-100 text-orange-700'}`}>{reg.motivo}</span>
+                                                            {reg.dataParada && (
+                                                                <span className="text-[7px] font-bold px-1.5 py-0.5 rounded uppercase bg-slate-100 text-slate-500 border border-slate-200">
+                                                                    {calcularDiasParado(reg.dataParada, reg.id)}d parado
+                                                                </span>
+                                                            )}
+                                                        </>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
                                         <div className="flex items-center justify-between sm:justify-start gap-4 w-full sm:w-auto">
                                             <div className="text-right ml-auto sm:ml-0">
-                                                <p className={`text-lg font-black ${reg.status === 'ligado' ? 'text-emerald-600' : 'text-red-500'}`}>
+                                                <p className={`text-lg font-black ${reg.status === 'ligado' ? 'text-emerald-600' : 'text-orange-500'}`}>
                                                     {reg.vazao.toLocaleString('pt-BR', {maximumFractionDigits:0})} <span className="text-[9px]">L/h</span>
                                                 </p>
                                                 <p className="text-[8px] font-bold text-slate-400 uppercase">Aferição: {reg.segundos}s</p>
@@ -539,45 +566,79 @@
                                     <HorizontalRuler percentage={stats.porcentagem} value={nivelTanque} exportMode />
                                 </div>
 
-                                <div className="export-surface rounded-[32px] overflow-hidden mb-8">
-                                    <div className="bg-slate-100 py-5 text-center border-b border-slate-200">
-                                        <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.42em]">Detalhamento Técnico das Unidades</p>
-                                    </div>
-                                    <div className="divide-y divide-slate-50">
-                                        {stats.ordenados.map((r) => (
-                                            <div key={r.id} className="export-row flex items-center justify-between py-6">
-                                                <div className="flex flex-col w-1/4">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="export-unit-name">{r.bloco}</span>
-                                                        <span className="text-[10px] font-bold text-slate-400 mt-1">({r.hora || '--:--'})</span>
-                                                    </div>
-                                                    <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Unid. Bombeamento</span>
-                                                </div>
-
-                                                <div className="flex items-center justify-center gap-4 w-1/3">
-                                                    <div className={`export-status-badge ${r.status === 'ligado' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-600 text-white'}`}>
-                                                        {r.status}
-                                                    </div>
-                                                    {r.status === 'desligado' && (
-                                                        <div className="bg-orange-50 text-orange-700 px-3 py-1.5 rounded-lg font-black text-[9px] uppercase border border-orange-100">
-                                                            {r.motivo}
+                                <div className="grid grid-cols-2 gap-6 mb-8 items-start">
+                                    {/* TABELA: POÇOS ATIVOS */}
+                                    <div className="export-surface rounded-[24px] overflow-hidden mb-0">
+                                        <div className="bg-emerald-50 py-4 text-center border-b border-emerald-100">
+                                            <p className="text-[11px] font-black text-emerald-700 uppercase tracking-[0.2em]">Poços Ativos</p>
+                                        </div>
+                                        <div className="divide-y divide-slate-100">
+                                            {stats.ordenados.filter(r => r.status === 'ligado').length === 0 ? (
+                                                <div className="p-6 text-center text-slate-400 text-sm font-bold">Nenhum poço ativo</div>
+                                            ) : (
+                                                stats.ordenados.filter(r => r.status === 'ligado').map((r) => (
+                                                    <div key={r.id} className="p-5 flex items-center justify-between bg-white">
+                                                        <div>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="font-black text-slate-800 text-lg">{r.bloco}</span>
+                                                            </div>
+                                                            <span className="text-[10px] font-bold text-slate-400 mt-1">Reg: {r.hora || '--:--'}</span>
                                                         </div>
-                                                    )}
-                                                </div>
-
-                                                <div className="text-right w-1/3">
-                                                    <div className="flex items-baseline justify-end gap-2">
-                                                        <span className={`text-[32px] font-black leading-none ${r.status === 'ligado' ? 'text-emerald-600' : 'text-red-500'}`}>
-                                                            {r.vazao.toLocaleString('pt-BR', {maximumFractionDigits:0})}
-                                                        </span>
-                                                        <span className={`text-[14px] font-black leading-none ${r.status === 'ligado' ? 'text-emerald-500' : 'text-red-400'}`}>L/h</span>
+                                                        <div className="text-right">
+                                                            <p className="text-2xl font-black text-emerald-600 leading-none">
+                                                                {r.vazao.toLocaleString('pt-BR', {maximumFractionDigits:0})} <span className="text-[12px]">L/h</span>
+                                                            </p>
+                                                            <p className="text-[9px] font-bold text-slate-400 mt-1.5 uppercase">Aferição: {r.segundos}s</p>
+                                                        </div>
                                                     </div>
-                                                    <p className="mt-2">
-                                                        <span className="afericao-badge">Aferição <strong>{r.segundos}s</strong></span>
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        ))}
+                                                ))
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* TABELA: POÇOS EM MANUTENÇÃO / PARADOS */}
+                                    <div className="export-surface rounded-[24px] overflow-hidden mb-0">
+                                        <div className="bg-orange-50 py-4 text-center border-b border-orange-100">
+                                            <p className="text-[11px] font-black text-orange-700 uppercase tracking-[0.2em]">Poços Parados / Manutenção</p>
+                                        </div>
+                                        <div className="divide-y divide-slate-100">
+                                            {stats.ordenados.filter(r => r.status === 'desligado').length === 0 ? (
+                                                <div className="p-6 text-center text-slate-400 text-sm font-bold">Nenhum poço parado</div>
+                                            ) : (
+                                                stats.ordenados.filter(r => r.status === 'desligado').map((r) => (
+                                                    <div key={r.id} className="p-5 flex items-center justify-between bg-white">
+                                                        <div className="flex-1">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="font-black text-slate-800 text-lg">{r.bloco}</span>
+                                                            </div>
+                                                            <span className="text-[10px] font-bold text-slate-400 mt-1">Reg: {r.hora || '--:--'}</span>
+                                                            
+                                                            <div className="flex gap-2 mt-2.5">
+                                                                <div className={`px-2 py-0.5 rounded font-black text-[9px] uppercase border ${r.motivo === 'MANUTENÇÃO' ? 'bg-red-50 text-red-700 border-red-100' : 'bg-orange-50 text-orange-700 border-orange-100'}`}>
+                                                                    {r.motivo}
+                                                                </div>
+                                                                {r.dataParada && (
+                                                                    <div className="px-2 py-0.5 rounded font-black text-[9px] uppercase bg-slate-100 text-slate-500 border border-slate-200">
+                                                                        {calcularDiasParado(r.dataParada, r.id)}d parado
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* MOSTRAR ÚLTIMA VAZÃO DESTACADA QUANDO HOUVER REGISTRO DE SEGUNDOS */}
+                                                        {r.segundos && r.segundos !== '0,00' && r.segundos !== '0' && (
+                                                            <div className={`text-right ml-3 pl-4 border-l ${r.motivo === 'MANUTENÇÃO' ? 'border-red-100' : 'border-slate-100'}`}>
+                                                                <p className={`text-[8px] font-black uppercase tracking-wider mb-0.5 ${r.motivo === 'MANUTENÇÃO' ? 'text-red-400' : 'text-slate-400'}`}>Última Vazão</p>
+                                                                <p className={`text-xl font-black leading-none ${r.motivo === 'MANUTENÇÃO' ? 'text-red-600' : 'text-orange-500'}`}>
+                                                                    {r.vazao.toLocaleString('pt-BR', {maximumFractionDigits:0})} <span className={`text-[10px] ${r.motivo === 'MANUTENÇÃO' ? 'text-red-400' : 'text-orange-300'}`}>L/h</span>
+                                                                </p>
+                                                                <p className={`text-[8px] font-bold mt-1 uppercase ${r.motivo === 'MANUTENÇÃO' ? 'text-red-400' : 'text-slate-400'}`}>Aferição: {r.segundos}s</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
 
