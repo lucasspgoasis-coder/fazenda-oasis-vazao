@@ -16,6 +16,7 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.js"></script>
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
         
@@ -209,6 +210,7 @@
             const [registros, setRegistros] = useState([]);
             const [nivelTanque, setNivelTanque] = useState("3,20");
             const [isExporting, setIsExporting] = useState(false);
+            const [errorMessage, setErrorMessage] = useState("");
             const [formData, setFormData] = useState({ 
                 bloco: 'POÇO 01', 
                 segundos: '0,00', 
@@ -265,6 +267,7 @@
             const exportImage = async () => {
                 setIsExporting(true);
                 setShowExport(true);
+                setErrorMessage("");
                 try {
                     await new Promise((resolve) => setTimeout(resolve, 180));
                     await new Promise((resolve) => requestAnimationFrame(() => resolve()));
@@ -334,7 +337,8 @@
                     link.click();
                 } catch (error) {
                     console.error("Falha ao exportar relatório:", error);
-                    alert("Não foi possível gerar a imagem. Tente novamente.");
+                    setErrorMessage("Não foi possível gerar a imagem. Verifique a conexão e tente novamente.");
+                    setTimeout(() => setErrorMessage(""), 5000);
                 } finally {
                     const danglingClone = document.getElementById("export-container-clone");
                     if (danglingClone) danglingClone.remove();
@@ -344,7 +348,14 @@
             };
 
             return (
-                <div className="min-h-screen pb-20">
+                <div className="min-h-screen pb-20 relative">
+                    {/* Mensagem de Erro Temporária */}
+                    {errorMessage && (
+                        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded-full shadow-2xl z-50 font-bold text-sm animate-bounce">
+                            {errorMessage}
+                        </div>
+                    )}
+
                     <header className="text-white p-4 sm:p-5 sticky top-0 z-40 shadow-lg" style={{ background: 'linear-gradient(135deg, #072E21 0%, #083526 55%, #0B4A35 100%)' }}>
                         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                             <div className="flex items-center gap-4">
@@ -443,6 +454,7 @@
                             </div>
                         </div>
 
+                        {}
                         <div className="space-y-6">
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                                 <div className="p-3 sm:p-4 rounded-2xl text-white text-center shadow-md" style={{ background: 'linear-gradient(145deg, #2563EB 0%, #1D4ED8 100%)' }}>
@@ -522,7 +534,7 @@
                         </div>
                     </main>
 
-                    {/* ÁREA DE EXPORTAÇÃO */}
+                    {}
                     {showExport && (
                         <div id="export-container" ref={exportRef} className="bg-white">
                             <div className="px-8 py-5 text-white border-b-[8px] border-emerald-600" style={{background: 'linear-gradient(135deg, #0D5B46 0%, #0F6A52 55%, #158368 100%)'}}>
@@ -573,6 +585,7 @@
                                     <HorizontalRuler percentage={stats.porcentagem} value={nivelTanque} exportMode />
                                 </div>
 
+                                {}
                                 <div className="grid grid-cols-3 gap-6 mb-8 items-stretch">
                                     {/* TABELA: POÇOS ATIVOS */}
                                     <div className="export-surface rounded-[24px] overflow-hidden mb-0 flex flex-col h-full">
@@ -585,11 +598,18 @@
                                             ) : (
                                                 stats.ordenados.filter(r => r.status === 'ligado').map((r) => (
                                                     <div key={r.id} className="p-5 flex items-center justify-between bg-white">
-                                                        <div>
+                                                        <div className="flex-1">
                                                             <div className="flex items-center gap-2">
                                                                 <span className="font-black text-slate-800 text-lg">{r.bloco}</span>
                                                             </div>
-                                                            <span className="text-[10px] font-bold text-slate-400 mt-1">Reg: {r.hora || '--:--'}</span>
+                                                            <span className="text-[10px] font-bold text-slate-400 mt-1 block">Reg: {r.hora || '--:--'}</span>
+                                                            
+                                                            {/* SELO LIGADO ADICIONADO AQUI NO EXPORT */}
+                                                            <div className="flex gap-2 mt-2.5">
+                                                                <div className="px-2 py-0.5 rounded flex items-center font-black text-[9px] uppercase border bg-emerald-50 text-emerald-700 border-emerald-100">
+                                                                    Ligado
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                         <div className="text-right">
                                                             <p className="text-2xl font-black text-emerald-600 leading-none">
@@ -605,10 +625,11 @@
                                         </div>
                                     </div>
 
-                                    {/* TABELA: POÇOS TANQUE CHEIO */}
+                                    {/* TABELA: POÇOS TANQUE CHEIO -> RENOMEADA PARA DESLIGADOS */}
                                     <div className="export-surface rounded-[24px] overflow-hidden mb-0 flex flex-col h-full">
                                         <div className="bg-blue-50 py-4 text-center border-b border-blue-100">
-                                            <p className="text-[11px] font-black text-blue-700 uppercase tracking-[0.2em]">Poços: Tanque Cheio</p>
+                                            {/* TEXTO ALTERADO PARA DESLIGADOS AQUI */}
+                                            <p className="text-[11px] font-black text-blue-700 uppercase tracking-[0.2em]">Poços: Desligados</p>
                                         </div>
                                         <div className="divide-y divide-slate-100 flex-1 bg-white">
                                             {stats.ordenados.filter(r => r.status === 'desligado' && r.motivo === 'TANQUE CHEIO').length === 0 ? (
@@ -620,7 +641,7 @@
                                                             <div className="flex items-center gap-2">
                                                                 <span className="font-black text-slate-800 text-lg">{r.bloco}</span>
                                                             </div>
-                                                            <span className="text-[10px] font-bold text-slate-400 mt-1">Reg: {r.hora || '--:--'}</span>
+                                                            <span className="text-[10px] font-bold text-slate-400 mt-1 block">Reg: {r.hora || '--:--'}</span>
                                                             
                                                             <div className="flex gap-2 mt-2.5">
                                                                 <div className="px-2 py-0.5 rounded flex items-center font-black text-[9px] uppercase border bg-blue-50 text-blue-700 border-blue-100">
@@ -662,7 +683,7 @@
                                                             <div className="flex items-center gap-2">
                                                                 <span className="font-black text-slate-800 text-lg">{r.bloco}</span>
                                                             </div>
-                                                            <span className="text-[10px] font-bold text-slate-400 mt-1">Reg: {r.hora || '--:--'}</span>
+                                                            <span className="text-[10px] font-bold text-slate-400 mt-1 block">Reg: {r.hora || '--:--'}</span>
                                                             
                                                             <div className="flex gap-2 mt-2.5">
                                                                 <div className={`px-2 py-0.5 rounded flex items-center font-black text-[9px] uppercase border ${r.motivo === 'MANUTENÇÃO' ? 'bg-red-50 text-red-700 border-red-100' : 'bg-orange-50 text-orange-700 border-orange-100'}`}>
