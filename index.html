@@ -357,7 +357,9 @@
                                 <input type="text" value={nivelTanque} 
                                     onChange={(e) => {
                                         let val = e.target.value.replace(/\D/g, "");
-                                        let formatted = (parseFloat(val || 0) / 100).toFixed(2).replace(".", ",");
+                                        let numValue = parseFloat(val || 0) / 100;
+                                        if (numValue > 4.71) numValue = 4.71; // Trava de limite máximo
+                                        let formatted = numValue.toFixed(2).replace(".", ",");
                                         setNivelTanque(formatted);
                                         localStorage.setItem('oasis_tank_v23', formatted);
                                     }}
