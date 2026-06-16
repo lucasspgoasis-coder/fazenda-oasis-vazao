@@ -180,13 +180,17 @@
             const [nivelTanque, setNivelTanque] = useState("3,20");
             const [isExporting, setIsExporting] = useState(false);
             const [errorMessage, setErrorMessage] = useState("");
+            
+            // Adicionado campo 'hora' com o horário atual por padrão
             const [formData, setFormData] = useState({ 
                 bloco: 'POÇO 01', 
                 segundos: '0,00', 
                 status: 'desligado',
                 motivo: 'TANQUE CHEIO',
-                dataParada: new Date().toISOString().split('T')[0]
+                dataParada: new Date().toISOString().split('T')[0],
+                hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
             });
+
             const [showExport, setShowExport] = useState(false);
             const exportRef = useRef(null);
 
@@ -229,14 +233,11 @@
                 const segs = parseFloat(formData.segundos.replace(",", ".")) || 0;
                 const vazaoCalculada = segs > 0 ? (15 / segs) * 3600 : 0;
                 
-                const agora = new Date();
-                const horaFormatada = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-                
+                // Salva utilizando os dados do formulário, incluindo a hora digitada manualmente
                 const novo = { 
                     ...formData, 
                     vazao: vazaoCalculada, 
-                    id: Date.now(), 
-                    hora: horaFormatada
+                    id: Date.now()
                 };
 
                 const filtrados = registros.filter(r => r.bloco !== formData.bloco);
@@ -329,15 +330,39 @@
 
                             <div className="app-surface p-5 sm:p-6 rounded-3xl">
                                 <form onSubmit={handleSave} className="space-y-4">
-                                    <div>
-                                        <p className="text-[9px] font-black text-slate-400 uppercase mb-2">Unidade</p>
-                                        <select value={formData.bloco} onChange={e => {
-                                            const poçoExistente = registros.find(r => r.bloco === e.target.value);
-                                            if(poçoExistente) setFormData(poçoExistente);
-                                            else setFormData({...formData, bloco: e.target.value});
-                                        }} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 outline-none">
-                                            {POCOS_LIST.map(p => <option key={p} value={p}>{p}</option>)}
-                                        </select>
+                                    <div className="grid grid-cols-[1fr_100px] gap-2">
+                                        <div>
+                                            <p className="text-[9px] font-black text-slate-400 uppercase mb-2">Unidade</p>
+                                            <select value={formData.bloco} onChange={e => {
+                                                const poçoExistente = registros.find(r => r.bloco === e.target.value);
+                                                if(poçoExistente) {
+                                                    setFormData({
+                                                        ...poçoExistente, 
+                                                        // Garante que a hora puxe a hora salva ou a hora atual se estiver vazia
+                                                        hora: poçoExistente.hora || new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                                                    });
+                                                }
+                                                else {
+                                                    setFormData({
+                                                        ...formData, 
+                                                        bloco: e.target.value,
+                                                        hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                                                    });
+                                                }
+                                            }} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 outline-none">
+                                                {POCOS_LIST.map(p => <option key={p} value={p}>{p}</option>)}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] font-black text-slate-400 uppercase mb-2">Hora</p>
+                                            <input 
+                                                type="time" 
+                                                value={formData.hora} 
+                                                onChange={e => setFormData({...formData, hora: e.target.value})} 
+                                                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 outline-none"
+                                                required
+                                            />
+                                        </div>
                                     </div>
                                     
                                     <div className="grid grid-cols-2 gap-2">
