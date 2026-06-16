@@ -9,17 +9,23 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Resumo dos Poços">
+    
+    <!-- Pré-carregamento e Fontes do Google sem utilizar @import no CSS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
     <link rel="icon" type="image/png" sizes="192x192" href="https://i.imgur.com/aRQ2VUl.png">
     <link rel="apple-touch-icon" href="https://i.imgur.com/aRQ2VUl.png">
+    
+    <!-- Bibliotecas externas utilizando versões estáveis UMD para evitar conflitos de módulos -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.3/babel.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-        
         body { 
             font-family: 'Inter', sans-serif; 
             background: linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%);
@@ -108,13 +114,14 @@
         .table-row-spacing td {
             padding-top: 18px;
             padding-bottom: 18px;
+            vertical-align: middle;
         }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
-    <script type="text/babel">
+    <script type="text/babel" data-presets="react">
         const { useState, useEffect, useMemo, useRef } = React;
 
         const OASIS_LOGO_URL = "https://i.imgur.com/aRQ2VUl.png";
@@ -123,6 +130,7 @@
         const MAX_NIVEL = 4.71; 
         const MARKERS = [0, 1, 2, 3, 4, 4.71];
 
+        // Função para calcular os dias de paragem operacional
         const calcularDiasParado = (dataParada, timestampRegistro) => {
             if (!dataParada) return 0;
             const inicio = new Date(dataParada + 'T00:00:00');
@@ -204,7 +212,6 @@
                 };
             }, [registros, nivelTanque]);
 
-            // Separação de registros para otimizar renderizações das tabelas
             const registrosLigados = useMemo(() => {
                 return stats.ordenados.filter(r => r.status === 'ligado');
             }, [stats.ordenados]);
@@ -243,66 +250,20 @@
                 setShowExport(true);
                 setErrorMessage("");
                 try {
-                    await new Promise((resolve) => setTimeout(resolve, 250));
-                    await new Promise((resolve) => requestAnimationFrame(() => resolve()));
-                    if (document.fonts && document.fonts.ready) {
-                        await document.fonts.ready;
-                    }
-
+                    await new Promise((resolve) => setTimeout(resolve, 300));
+                    
                     const sourceNode = exportRef.current;
                     if (!sourceNode) throw new Error("Área de exportação não disponível.");
 
-                    const exportWrapper = document.createElement("div");
-                    let dataUrl = "";
-                    try {
-                        const exportWidth = 1200;
-                        exportWrapper.style.position = "fixed";
-                        exportWrapper.style.left = "-99999px";
-                        exportWrapper.style.top = "0";
-                        exportWrapper.style.width = `${exportWidth}px`;
-                        exportWrapper.style.maxWidth = `${exportWidth}px`;
-                        exportWrapper.style.backgroundColor = "#ffffff";
-                        exportWrapper.style.zIndex = "-1";
+                    const canvas = await html2canvas(sourceNode, {
+                        scale: 2, 
+                        useCORS: true, 
+                        allowTaint: true,
+                        backgroundColor: "#ffffff",
+                        logging: false
+                    });
 
-                        const exportClone = sourceNode.cloneNode(true);
-                        exportClone.id = "export-container-clone";
-                        exportClone.style.width = `${exportWidth}px`;
-                        exportClone.style.maxWidth = `${exportWidth}px`;
-                        exportClone.style.height = "auto";
-                        exportClone.style.margin = "0";
-                        exportClone.style.borderRadius = "0";
-                        exportClone.style.border = "none";
-
-                        exportWrapper.appendChild(exportClone);
-                        document.body.appendChild(exportWrapper);
-
-                        const clonedImages = Array.from(exportClone.querySelectorAll("img"));
-                        await Promise.all(
-                            clonedImages.map((img) => {
-                                if (img.complete) return Promise.resolve();
-                                return new Promise((resolve) => {
-                                    img.onload = resolve;
-                                    img.onerror = resolve;
-                                });
-                            })
-                        );
-
-                        const targetWidth = 1800;
-                        const scaledHeight = Math.round((exportClone.scrollHeight * targetWidth) / exportWidth);
-
-                        dataUrl = await window.htmlToImage.toPng(exportClone, {
-                            pixelRatio: 3,
-                            cacheBust: true,
-                            backgroundColor: "#ffffff",
-                            width: exportWidth,
-                            canvasWidth: targetWidth,
-                            canvasHeight: scaledHeight
-                        });
-                    } finally {
-                        if (document.body.contains(exportWrapper)) {
-                            document.body.removeChild(exportWrapper);
-                        }
-                    }
+                    const dataUrl = canvas.toDataURL("image/png");
 
                     const link = document.createElement('a');
                     link.download = `Relatorio_Oasis_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.png`;
@@ -313,8 +274,6 @@
                     setErrorMessage("Não foi possível gerar a imagem. Verifique os dados e tente novamente.");
                     setTimeout(() => setErrorMessage(""), 5000);
                 } finally {
-                    const danglingClone = document.getElementById("export-container-clone");
-                    if (danglingClone) danglingClone.remove();
                     setShowExport(false);
                     setIsExporting(false);
                 }
@@ -358,7 +317,7 @@
                                     onChange={(e) => {
                                         let val = e.target.value.replace(/\D/g, "");
                                         let numValue = parseFloat(val || 0) / 100;
-                                        if (numValue > 4.71) numValue = 4.71; // Trava de limite máximo
+                                        if (numValue > 4.71) numValue = 4.71;
                                         let formatted = numValue.toFixed(2).replace(".", ",");
                                         setNivelTanque(formatted);
                                         localStorage.setItem('oasis_tank_v23', formatted);
@@ -470,16 +429,16 @@
                                                             <SvgIcon name="clock" className="w-2.5 h-2.5" /> {reg.hora || '--:--'}
                                                         </span>
                                                     </div>
-                                                    <div className="flex gap-2 mt-1.5 items-center">
+                                                    <div className="flex gap-2 mt-1.5 items-center flex-wrap">
                                                         <span className={`text-[8px] font-extrabold px-2 py-0.5 rounded uppercase tracking-wider ${reg.status === 'ligado' ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-500 text-white'}`}>{reg.status}</span>
                                                         
                                                         {reg.status === 'desligado' && (
                                                             <>
                                                                 <span className={`text-[8px] font-extrabold px-2 py-0.5 rounded flex items-center uppercase tracking-wider ${reg.motivo === 'MANUTENÇÃO' ? 'bg-red-600 text-white' : 'bg-orange-100 text-orange-700'}`}>{reg.motivo}</span>
                                                                 {reg.motivo === 'MANUTENÇÃO' && reg.dataParada && (
-                                                                    <div className="flex flex-col bg-slate-100 border border-slate-200 rounded px-2 py-0.5 leading-none justify-center">
-                                                                        <span className="text-[6px] font-black text-slate-400 uppercase tracking-wide">Desde {reg.dataParada.split('-').reverse().join('/')}</span>
-                                                                        <span className="text-[8px] font-bold text-slate-600 uppercase mt-[2px]">
+                                                                    <div className="flex flex-col bg-red-50 border border-red-200 rounded px-2.5 py-0.5 leading-none justify-center ml-1">
+                                                                        <span className="text-[6px] font-black text-red-500 uppercase tracking-wide">Desde {reg.dataParada.split('-').reverse().join('/')}</span>
+                                                                        <span className="text-[9px] font-black text-red-700 uppercase mt-[2px]">
                                                                             {calcularDiasParado(reg.dataParada, reg.id)} {calcularDiasParado(reg.dataParada, reg.id) === 1 ? 'dia' : 'dias'}
                                                                         </span>
                                                                     </div>
@@ -578,36 +537,36 @@
 
                                         <table className="w-full text-left border-collapse bg-white">
                                             <thead>
-                                                <tr className="bg-emerald-50/40 border-b border-emerald-100 text-[11px] font-black text-emerald-800 uppercase tracking-wider">
-                                                    <th className="py-4.5 px-6 w-[20%]">Unidade</th>
-                                                    <th className="py-4.5 px-6 w-[22%]">Status</th>
-                                                    <th className="py-4.5 px-6 w-[28%]">Diagnóstico</th>
-                                                    <th className="py-4.5 px-6 w-[15%]">Aferição</th>
+                                                <tr className="bg-emerald-50/40 border-b border-emerald-100 text-[11px] font-black text-emerald-800 uppercase tracking-wider text-center">
+                                                    <th className="py-4.5 px-6 w-[20%] text-left">Unidade</th>
+                                                    <th className="py-4.5 px-6 w-[22%] text-center">Status</th>
+                                                    <th className="py-4.5 px-6 w-[28%] text-center">Diagnóstico</th>
+                                                    <th className="py-4.5 px-6 w-[15%] text-center">Aferição</th>
                                                     <th className="py-4.5 px-6 text-right w-[15%]">Vazão Atual</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-100">
                                                 {registrosLigados.map((r, index) => (
                                                     <tr key={r.id} className={`table-row-spacing ${index % 2 === 0 ? "bg-white" : "bg-emerald-50/10"}`}>
-                                                        <td className="px-6 font-extrabold text-slate-900">
+                                                        <td className="px-6 font-extrabold text-slate-900 text-left">
                                                             <p className="text-lg leading-none mb-1.5">{r.bloco}</p>
                                                             <p className="text-[10px] font-semibold text-slate-400 flex items-center gap-1">
                                                                 <SvgIcon name="clock" className="w-2.5 h-2.5" /> Reg: {r.hora || '--:--'}
                                                             </p>
                                                         </td>
-                                                        <td className="px-6">
+                                                        <td className="px-6 text-center">
                                                             <span className="inline-block px-3 py-1 rounded-full text-[10px] font-black border uppercase tracking-wider bg-emerald-100 text-emerald-800 border-emerald-200">
                                                                 LIGADO
                                                             </span>
                                                         </td>
-                                                        <td className="px-6">
-                                                            <div className="flex items-center gap-1.5 text-emerald-700">
+                                                        <td className="px-6 text-center">
+                                                            <div className="flex items-center justify-center gap-1.5 text-emerald-700 mx-auto">
                                                                 <span className="inline-block w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
                                                                 <span className="text-[11px] font-bold uppercase">Operando sem anormalidades</span>
                                                             </div>
                                                         </td>
-                                                        <td className="px-6">
-                                                            <span className="inline-flex items-center px-3 py-1 rounded-md border border-slate-200 bg-slate-50 font-bold text-sm text-slate-700">
+                                                        <td className="px-6 text-center">
+                                                            <span className="inline-flex items-center justify-center px-3 py-1 rounded-md border border-slate-200 bg-slate-50 font-bold text-sm text-slate-700">
                                                                 {r.segundos}s
                                                             </span>
                                                         </td>
@@ -639,35 +598,35 @@
 
                                         <table className="w-full text-left border-collapse bg-white">
                                             <thead>
-                                                <tr className="bg-blue-50/40 border-b border-blue-100 text-[11px] font-black text-blue-800 uppercase tracking-wider">
-                                                    <th className="py-4.5 px-6 w-[20%]">Unidade</th>
-                                                    <th className="py-4.5 px-6 w-[22%]">Status</th>
-                                                    <th className="py-4.5 px-6 w-[28%]">Diagnóstico</th>
-                                                    <th className="py-4.5 px-6 w-[15%]">Aferição</th>
+                                                <tr className="bg-blue-50/40 border-b border-blue-100 text-[11px] font-black text-blue-800 uppercase tracking-wider text-center">
+                                                    <th className="py-4.5 px-6 w-[20%] text-left">Unidade</th>
+                                                    <th className="py-4.5 px-6 w-[22%] text-center">Status</th>
+                                                    <th className="py-4.5 px-6 w-[28%] text-center">Diagnóstico</th>
+                                                    <th className="py-4.5 px-6 w-[15%] text-center">Aferição</th>
                                                     <th className="py-4.5 px-6 text-right w-[15%]">Última Vazão</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-100">
                                                 {registrosTanqueCheio.map((r, index) => (
                                                     <tr key={r.id} className={`table-row-spacing ${index % 2 === 0 ? "bg-white" : "bg-blue-50/10"}`}>
-                                                        <td className="px-6 font-extrabold text-slate-900">
+                                                        <td className="px-6 font-extrabold text-slate-900 text-left">
                                                             <p className="text-lg leading-none mb-1.5">{r.bloco}</p>
                                                             <p className="text-[10px] font-semibold text-slate-400 flex items-center gap-1">
                                                                 <SvgIcon name="clock" className="w-2.5 h-2.5" /> Reg: {r.hora || '--:--'}
                                                             </p>
                                                         </td>
-                                                        <td className="px-6">
+                                                        <td className="px-6 text-center">
                                                             <span className="inline-block px-3 py-1 rounded-full text-[10px] font-black border uppercase tracking-wider bg-blue-100 text-blue-800 border-blue-200">
                                                                 T. CHEIO
                                                             </span>
                                                         </td>
-                                                        <td className="px-6">
-                                                            <span className="text-[11px] font-bold text-blue-600 uppercase">
+                                                        <td className="px-6 text-center">
+                                                            <span className="text-[11px] font-bold text-blue-600 uppercase block text-center">
                                                                 Desativação preventiva automática
                                                             </span>
                                                         </td>
-                                                        <td className="px-6">
-                                                            <span className="inline-flex items-center px-3 py-1 rounded-md border border-slate-200 bg-slate-50 font-bold text-sm text-slate-700">
+                                                        <td className="px-6 text-center">
+                                                            <span className="inline-flex items-center justify-center px-3 py-1 rounded-md border border-slate-200 bg-slate-50 font-bold text-sm text-slate-700">
                                                                 {r.segundos}s
                                                             </span>
                                                         </td>
@@ -699,11 +658,11 @@
 
                                         <table className="w-full text-left border-collapse bg-white">
                                             <thead>
-                                                <tr className="bg-orange-50/40 border-b border-orange-100 text-[11px] font-black text-orange-850 uppercase tracking-wider">
-                                                    <th className="py-4.5 px-6 w-[20%]">Unidade</th>
-                                                    <th className="py-4.5 px-6 w-[22%]">Status / Evento</th>
-                                                    <th className="py-4.5 px-6 w-[28%]">Janela de Tempo / Causa</th>
-                                                    <th className="py-4.5 px-6 w-[15%]">Aferição</th>
+                                                <tr className="bg-orange-50/40 border-b border-orange-100 text-[11px] font-black text-orange-850 uppercase tracking-wider text-center">
+                                                    <th className="py-4.5 px-6 w-[20%] text-left">Unidade</th>
+                                                    <th className="py-4.5 px-6 w-[22%] text-center">Status / Evento</th>
+                                                    <th className="py-4.5 px-6 w-[28%] text-center">Janela de Tempo / Causa</th>
+                                                    <th className="py-4.5 px-6 w-[15%] text-center">Aferição</th>
                                                     <th className="py-4.5 px-6 text-right w-[15%]">Última Vazão</th>
                                                 </tr>
                                             </thead>
@@ -715,18 +674,18 @@
                                                     if (r.motivo === "MANUTENÇÃO") {
                                                         badgeStyle = "bg-red-100 text-red-800 border-red-200";
                                                         detail = (
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="text-[10px] font-bold text-red-600 uppercase bg-red-50 border border-red-100 px-2 py-0.5 rounded">
+                                                            <div className="flex flex-col gap-2 items-center justify-center mx-auto">
+                                                                <span className="inline-block text-[11px] font-extrabold text-red-600 uppercase bg-red-50 border border-red-100 px-2.5 py-1 rounded">
                                                                     Desde {r.dataParada.split('-').reverse().join('/')}
                                                                 </span>
-                                                                <span className="text-[11px] font-extrabold text-red-700">
-                                                                    ({calcularDiasParado(r.dataParada, r.id)} {calcularDiasParado(r.dataParada, r.id) === 1 ? 'dia' : 'dias'})
+                                                                <span className="inline-block text-[14px] font-black text-red-700 bg-red-100 px-3 py-1 rounded-md border border-red-200 shadow-sm leading-none">
+                                                                    {calcularDiasParado(r.dataParada, r.id)} {calcularDiasParado(r.dataParada, r.id) === 1 ? 'dia' : 'dias'} parados
                                                                 </span>
                                                             </div>
                                                         );
                                                     } else {
                                                         detail = (
-                                                            <span className="text-[11px] font-semibold text-amber-600 uppercase tracking-wide">
+                                                            <span className="text-[11px] font-bold text-amber-600 uppercase tracking-wide block text-center">
                                                                 Aguardando liberação operacional
                                                             </span>
                                                         );
@@ -734,22 +693,22 @@
 
                                                     return (
                                                         <tr key={r.id} className={`table-row-spacing ${index % 2 === 0 ? "bg-white" : "bg-orange-50/10"}`}>
-                                                            <td className="px-6 font-extrabold text-slate-900">
+                                                            <td className="px-6 font-extrabold text-slate-900 text-left">
                                                                 <p className="text-lg leading-none mb-1.5">{r.bloco}</p>
                                                                 <p className="text-[10px] font-semibold text-slate-400 flex items-center gap-1">
                                                                     <SvgIcon name="clock" className="w-2.5 h-2.5" /> Reg: {r.hora || '--:--'}
                                                                 </p>
                                                             </td>
-                                                            <td className="px-6">
+                                                            <td className="px-6 text-center">
                                                                 <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-black border uppercase tracking-wider ${badgeStyle}`}>
                                                                     {r.motivo}
                                                                 </span>
                                                             </td>
-                                                            <td className="px-6">
+                                                            <td className="px-6 text-center">
                                                                 {detail}
                                                             </td>
-                                                            <td className="px-6">
-                                                                <span className="inline-flex items-center px-3 py-1 rounded-md border border-slate-200 bg-slate-50 font-bold text-sm text-slate-700">
+                                                            <td className="px-6 text-center">
+                                                                <span className="inline-flex items-center justify-center px-3 py-1 rounded-md border border-slate-200 bg-slate-50 font-bold text-sm text-slate-700">
                                                                     {r.segundos}s
                                                                 </span>
                                                             </td>
