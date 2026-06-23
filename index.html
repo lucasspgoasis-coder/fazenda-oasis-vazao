@@ -10,16 +10,13 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Resumo dos Poços">
     
-    <!-- Pré-carregamento e Fontes do Google -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <!-- Adicionado crossorigin="anonymous" para evitar o erro SecurityError (CORS) no html-to-image -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" crossorigin="anonymous">
     
     <link rel="icon" type="image/png" sizes="192x192" href="https://i.imgur.com/aRQ2VUl.png">
     <link rel="apple-touch-icon" href="https://i.imgur.com/aRQ2VUl.png">
     
-    <!-- Bibliotecas externas utilizando versões estáveis -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -33,7 +30,6 @@
             color: #0F172A;
         }
 
-        /* Container de exportação oculto */
         #export-container {
             position: absolute;
             left: -9999px;
@@ -123,7 +119,6 @@
         const MAX_NIVEL = 4.71; 
         const MARKERS = [0, 1, 2, 3, 4, 4.71];
 
-        // Função para calcular os dias de paragem operacional
         const calcularDiasParado = (dataParada, timestampRegistro) => {
             if (!dataParada) return 0;
             const inicio = new Date(dataParada + 'T00:00:00');
@@ -198,8 +193,6 @@
             const stats = useMemo(() => {
                 const totalVazao = registros.reduce((acc, curr) => acc + (Number(curr.vazao) || 0), 0);
                 const vazaoMedia = registros.length > 0 ? totalVazao / registros.length : 0;
-                
-                // O status "religado" também conta como poço ativo (operando)
                 const ativos = registros.filter(r => r.status === 'ligado' || r.status === 'religado').length;
                 const metros = parseFloat(nivelTanque.replace(",", ".")) || 0;
                 const porcentagem = (metros / MAX_NIVEL) * 100;
@@ -211,7 +204,6 @@
                 };
             }, [registros, nivelTanque]);
 
-            // Filtragem atualizada: engloba tanto os poços normais ligados quanto as unidades religadas
             const registrosLigados = useMemo(() => {
                 return stats.ordenados.filter(r => r.status === 'ligado' || r.status === 'religado');
             }, [stats.ordenados]);
@@ -257,15 +249,12 @@
                     sourceNode.style.top = "0";
                     sourceNode.style.zIndex = "-100";
 
-                    // Como a fonte agora carrega com crossorigin="anonymous", não precisamos mais de filtros complexos
                     const dataUrl = await window.htmlToImage.toJpeg(sourceNode, {
                         quality: 0.95, 
                         backgroundColor: '#ffffff',
                         pixelRatio: 2, 
                         width: 1200,
-                        style: {
-                            fontFamily: 'Inter, system-ui, -apple-system, sans-serif'
-                        }
+                        style: { fontFamily: 'Inter, system-ui, -apple-system, sans-serif' }
                     });
 
                     sourceNode.style.opacity = "0";
@@ -445,6 +434,7 @@
                             </div>
                         </div>
 
+                        {}
                         <div className="space-y-6">
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                                 <div className="p-4 rounded-2xl text-white text-center shadow-md" style={{ background: 'linear-gradient(145deg, #2563EB 0%, #1D4ED8 100%)' }}>
@@ -540,12 +530,12 @@
                                                 </div>
                                             </div>
                                             
-                                            {/* Observação no item da lista */}
+                                            {/* Observação no item da lista - Tamanho Aumentado */}
                                             {reg.observacao && (
-                                                <div className="mt-4 bg-amber-50/50 border border-amber-200 rounded-lg p-3 flex items-start gap-2.5 ml-0 sm:ml-16 shadow-sm">
-                                                    <SvgIcon name="clipboard" className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
-                                                    <p className="text-[11px] font-semibold text-amber-900 leading-relaxed">
-                                                        <strong className="font-black uppercase text-amber-700 mr-1.5 text-[9px] tracking-wider">Nota Operacional:</strong>
+                                                <div className="mt-4 bg-amber-50/50 border border-amber-200 rounded-lg p-4 flex items-start gap-3 ml-0 sm:ml-16 shadow-sm">
+                                                    <SvgIcon name="clipboard" className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                                                    <p className="text-[14px] font-semibold text-amber-900 leading-relaxed">
+                                                        <strong className="font-black uppercase text-amber-700 text-[10px] tracking-wider block mb-1">Nota Operacional:</strong>
                                                         {reg.observacao}
                                                     </p>
                                                 </div>
@@ -557,6 +547,7 @@
                         </div>
                     </main>
 
+                    {}
                     {showExport && (
                         <div id="export-container" ref={exportRef}>
                             <div className="px-10 py-8 text-white border-b-[8px] border-emerald-600" style={{background: 'linear-gradient(135deg, #0D5B46 0%, #0F6A52 55%, #158368 100%)'}}>
@@ -608,7 +599,7 @@
                                     <HorizontalRuler percentage={stats.porcentagem} value={nivelTanque} exportMode />
                                 </div>
 
-                                {/* PARTE 1: POÇOS EM ATIVIDADE (LIGADOS & RELIGADOS) */}
+                                {}
                                 {registrosLigados.length > 0 && (
                                     <div className="bg-white rounded-2xl overflow-hidden shadow-md border border-slate-200">
                                         <div className="bg-emerald-900 py-4 px-6 flex items-center justify-between border-b border-emerald-800">
@@ -677,12 +668,13 @@
                                                                 </div>
                                                             </td>
                                                         </tr>
+                                                        {/* Nota Operacional Aumentada no Export */}
                                                         {r.observacao && (
                                                             <tr className={`${index % 2 === 0 ? "bg-white" : "bg-emerald-50/10"}`}>
-                                                                <td colSpan="5" className="px-4 pb-4 pt-0">
-                                                                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 shadow-sm text-left mx-4">
-                                                                        <span className="text-[9px] font-black text-amber-700 uppercase tracking-wider mr-2">Nota / Correção Operacional:</span>
-                                                                        <span className="text-[11px] font-semibold text-amber-955">{r.observacao}</span>
+                                                                <td colSpan="5" className="px-4 pb-5 pt-0">
+                                                                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-sm text-left mx-4 mt-1 mb-2">
+                                                                        <span className="text-[11px] font-black text-amber-700 uppercase tracking-widest block mb-1">Nota / Correção Operacional:</span>
+                                                                        <span className="text-[16px] md:text-base font-bold text-amber-900 leading-relaxed">{r.observacao}</span>
                                                                     </div>
                                                                 </td>
                                                             </tr>
@@ -694,7 +686,7 @@
                                     </div>
                                 )}
 
-                                {/* PARTE 2: POÇOS DESLIGADOS - RESERVATÓRIO CHEIO */}
+                                {}
                                 {registrosTanqueCheio.length > 0 && (
                                     <div className="bg-white rounded-2xl overflow-hidden shadow-md border border-slate-200">
                                         <div className="bg-blue-900 py-4 px-6 flex items-center justify-between border-b border-blue-850">
@@ -751,10 +743,10 @@
                                                         </tr>
                                                         {r.observacao && (
                                                             <tr className={`${index % 2 === 0 ? "bg-white" : "bg-blue-50/10"}`}>
-                                                                <td colSpan="5" className="px-4 pb-4 pt-0">
-                                                                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 shadow-sm text-left mx-4">
-                                                                        <span className="text-[9px] font-black text-amber-700 uppercase tracking-wider mr-2">Nota / Correção Operacional:</span>
-                                                                        <span className="text-[11px] font-semibold text-amber-955">{r.observacao}</span>
+                                                                <td colSpan="5" className="px-4 pb-5 pt-0">
+                                                                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-sm text-left mx-4 mt-1 mb-2">
+                                                                        <span className="text-[11px] font-black text-amber-700 uppercase tracking-widest block mb-1">Nota / Correção Operacional:</span>
+                                                                        <span className="text-[16px] md:text-base font-bold text-amber-900 leading-relaxed">{r.observacao}</span>
                                                                     </div>
                                                                 </td>
                                                             </tr>
@@ -766,7 +758,7 @@
                                     </div>
                                 )}
 
-                                {/* PARTE 3: POÇOS EM MANUTENÇÃO E OUTROS PARADOS */}
+                                {}
                                 {registrosInterrompidos.length > 0 && (
                                     <div className="bg-white rounded-2xl overflow-hidden shadow-md border border-slate-200">
                                         <div className="bg-slate-800 py-4 px-6 flex items-center justify-between border-b border-slate-700">
@@ -845,10 +837,10 @@
                                                             </tr>
                                                             {r.observacao && (
                                                                 <tr className={`${index % 2 === 0 ? "bg-white" : "bg-orange-50/10"}`}>
-                                                                    <td colSpan="5" className="px-4 pb-4 pt-0">
-                                                                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 shadow-sm text-left mx-4">
-                                                                            <span className="text-[9px] font-black text-amber-700 uppercase tracking-wider mr-2">Nota / Correção Operacional:</span>
-                                                                            <span className="text-[11px] font-semibold text-amber-955">{r.observacao}</span>
+                                                                    <td colSpan="5" className="px-4 pb-5 pt-0">
+                                                                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-sm text-left mx-4 mt-1 mb-2">
+                                                                            <span className="text-[11px] font-black text-amber-700 uppercase tracking-widest block mb-1">Nota / Correção Operacional:</span>
+                                                                            <span className="text-[16px] md:text-base font-bold text-amber-900 leading-relaxed">{r.observacao}</span>
                                                                         </div>
                                                                     </td>
                                                                 </tr>
